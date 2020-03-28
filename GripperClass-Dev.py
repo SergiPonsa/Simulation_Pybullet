@@ -21,26 +21,12 @@ from constants import TCP_INIT_POSE
 
 # ------------------------------------------------------------------------------------------------------
 
-class Robot():
+class Gripper():
     """Generic Robot class"""
 
     def __init__(self,
                 urdf_root = pybullet_data.getDataPath(),
                 root = "",
-                robot_urdf = "",
-
-                robot_start_pos = [0, 0, 0],
-                robot_start_orien = p.getQuaternionFromEuler([0, 0, 0]),
-
-                robot_conection_to_tool_name = "",
-                robot_control_joints = [],
-                robot_mimic_joints_name = [],
-                robot_mimic_joints_master = [],
-                robot_mimic_multiplier = [],
-
-                nullspace == True,
-                home_position = [-0.992, -1.157, 1.323, -1.720, -1.587, 0.0],
-                visual_inspection = True,
 
                 tool_class = "",
                 tool_urdf = "",
@@ -50,23 +36,12 @@ class Robot():
                 tool_mimic_multiplier = [],
 
                 tcp_offset_pos = [0.0, 0.0, 0.0],
-                tcp_offset_orien = [0.0, 0.0, 0.0]):
+                tcp_offset_orien_e = [0.0, 0.0, 0.0]):
 
         """Initialization function
 
         urdf_root (str): root for URDF objects
         root (str): root directory for local files
-        robot_urdf (str): name and location of robot URDF file,
-
-        robot_start_pos (list double | x,y,z in m): determine the robot base position
-        robot_start_orien (list double | rx,ry,rz in radiants): determine the robot base orientation
-
-
-        robot_conection_to_tool_name (str): URDF name of the link/joint which connect with the tool
-        robot_control_joints (list of str): name robot control joints in right order for inverse kinematics
-        robot_mimic_joints_name (list of str): name robot joints which follow control joints in order to control them
-        robot_mimic_joints_master (list of str): name joints which master each mimic joint,
-        robot_mimic_multiplier (list of doubles): value of increase of the mimic respect the by increase of the master
 
         tool_urdf (str): name and location of tool URDF file
         tool_control_joints (list of str): name tool control joints in order to control them
@@ -77,42 +52,29 @@ class Robot():
         tcp_offset_pos (list of doubles | x,y,z in m): position offset referent to the robot_conection_to_tool_name
         tcp_offset_orien (list of doubles | rx,ry,rz in rad RPY): position offset referent to the robot_conection_to_tool_name
 
-        nullspace (boolean): True if we want to find the inverse kinematicscloser to home
-        home_position (list of doubles): joint angles in radiants of the initial joint position, I was also useing it to find solution near this configuration
-        visual_inspection=True)
-
         """
 
-        self.root = root
         self.urdf_root = urdf_root
-        self.robot_urdf = os.path.join(root, robot_urdf)
-
-        self.robot_start_pos = robot_start_pos
-        self.robot_start_orien = robot_start_orien
-
-        self.robot_conection_to_tool_name = robot_conection_to_tool_name
-        self.robot_control_joints = robot_control_joints
-        self.robot_mimic_joints_name = []
-        self.robot_mimic_joints_master = []
-        self.robot_mimic_multiplier = []
-
-        self.nullspace = nullspace
-        self.home_position = home_position
-        self.visual_inspection = visual_inspection
-
+        self.robot_urdf = os.path.join(root, robotgripper_urdf)
+        self.gripper_fingers_control_name = gripper_fingers_control_name
+        self.last_robot_joint_name = last_robot_joint_name
+        self.urdf_error_correct_orien_e = urdf_error_correct_orien_e
         self.tcp_offset_pos = tcp_offset_pos
-        self.tcp_offset_orien = tcp_offset_orien
-
+        self.tcp_offset_orien_e = tcp_offset_orien_e
+        self.robot_control_joints = robot_control_joints
         self.gripper_main_control_joint = gripper_main_control_joint
         self.mimic_joint_name = mimic_joint_name
         self.mimic_multiplier = mimic_multiplier
-
+        self.home = home
+        self.VISUAL_INSPECTION = visual_inspection
 
         # initialize variables
         self.robot_control_joints_index = [0, 0, 0, 0, 0, 0]  # to avoid errors
         self.opening_length = 0.085  # start with the gripper open
 
         # launch robot
+        robotStartPos = [0, 0, 0]  # don't modify!
+        robotStartOrien = p.getQuaternionFromEuler([0, 0, 0])  # don't modify!
         self.robotID = p.loadURDF(os.path.join(root, "urdf/ur5_rf85.urdf"), robotStartPos, robotStartOrien,
                                   flags=p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
         # robot data structure
