@@ -16,7 +16,7 @@ import pybullet as p
 import pybullet_data
 from collections import namedtuple
 from attrdict import AttrDict
-from constants import TCP_INIT_POSE
+
 
 
 # ------------------------------------------------------------------------------------------------------
@@ -94,9 +94,11 @@ class Robot():
         self.robot_control_joints_index = [0, 0, 0, 0, 0, 0]  # to avoid errors
         self.opening_length = 0.085  # start with the gripper open
 
+        print(self.robot_urdf)
+
         # launch robot in the world
-        self.robot_id = p.loadURDF(os.path.join(root, "urdf/ur5_rf85.urdf"), robotStartPos, robotStartOrien,
-                                  flags=p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
+        self.robot_id = p.loadURDF(os.path.join(root, robot_urdf), robot_launch_pos, robot_launch_orien,flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT )
+        print("Robot launched")
 
         # robot data structure
         joint_type_list = ["REVOLUTE", "PRISMATIC", "SPHERICAL", "PLANAR", "FIXED"]
@@ -116,24 +118,25 @@ class Robot():
             info = p.getJointInfo(self.robot_id, i)
             joint_id = info[0]
             joint_name = info[1].decode("utf-8")
-            self.joint_names.append(jointName) # I use it to search info in the dicctionary
-            joint_type = jointTypeList[info[2]]
-            joint_damping
+            self.joint_names.append(joint_name) # I use it to search info in the dicctionary
+            joint_type = joint_type_list[info[2]]
+            joint_damping = info[6]
+            joint_friction = info[7]
             joint_lower_limit = info[8]
             joint_upper_limit = info[9]
             joint_max_force = info[10]
             joint_max_velocity = info[11]
-            single_info = jointInfo(joint_id, joint_name, joint_type, joint_lower_limit, joint_upper_limit, joint_max_force,
-                                   joint_max_force)
+            single_info = joint_info(joint_id, joint_name, joint_type,joint_damping,joint_friction, joint_lower_limit, joint_upper_limit, joint_max_force,
+                                   joint_max_velocity)
             self.joints[single_info.name] = single_info
 
 
-            if jointName == self.last_robot_joint_name:
+            if joint_name == self.last_robot_joint_name:
                 self.last_robot_joint_index = i
 
             #while we get data of the joints i get the index of the control joints
             for k in range(len(self.robot_control_joints)):
-                if (jointName == self.robot_control_joints[k]):
+                if (joint_name == self.robot_control_joints[k]):
                     self.robot_control_joints_index[k] = i
 
 
@@ -142,7 +145,7 @@ class Robot():
         # parameters for the nullspace
         ll = [] #lower limit
         ul = [] #upper limit
-        get data from control joints get data from control jointsjr = [] # joint variance range
+        jr = [] # joint variance range
         rp = [] # the value it search to be closer to, the inverse kinematics
 
         # get robot data from the dicctionary
@@ -155,15 +158,15 @@ class Robot():
             rp.append(0)
 
         # Tell that the solution has to be near to the home position
-        for i in range(len(self.home)):
-            rp[i] = self.home[i]
+        for i in range(len(self.home_angles)):
+            rp[i] = self.home_angles[i]
 
         self.lower_limit=ll
         self.upper_limit=ul
         self.joint_range=jr
         self.resting_pose=rp
 
-    def move_joints(self, joint_param_value = self.home_angles, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 256, error_threshold = 10 ** -2):
+    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 256, error_threshold = 10 ** -2):
         """Class method to control robot position by passing joint angles
         joint_param_value (list): joint angles aimed to reach
         desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
@@ -173,6 +176,10 @@ class Robot():
         counter_max: To apply maximum this amount of times the control
         error_threshold: The acceptable difference between the robot joints and the target joints
         """
+
+        if (joint_param_value == None):
+            joint_param_value = self.home_angles
+
 
         reached = False
         counter = 0
@@ -255,7 +262,10 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, max_iterations = 500 ,nullspace = self.nullspace, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 256, error_threshold = 10 ** -2):
+    def move_cartesian(self, pose, max_iterations = 500 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 256, error_threshold = 10 ** -2):
+
+        if (nullspace == None):
+            nullspace = self.nullspace
 
         """Class method to control the robot position by passing space coordinates
          and orientation and working out the correspondence to joint angles
@@ -290,7 +300,7 @@ class Robot():
 
     def move_home(self):
         """Class method that sends robot to 'home' position"""
-        self.move_joints(joint_param_value = self.home)
+        self.move_joints(joint_param_value = self.home_angles)
 
     def get_actual_tcp_pose(self, print_value=False,referent_to_base = False):
 
@@ -408,7 +418,7 @@ class Robot():
         return [object_position_pick, object_orientation_pick_q]
 
     def wait(self, time_wait):
-        if self.VISUAL_INSPECTION:
+        if self.visual_inspection:
             t = int(240 * time_wait)
         else:
             t = int(time_wait * 20)
@@ -419,7 +429,7 @@ class Robot():
     def step_simulation(self):
         """Step simulation method"""
         p.stepSimulation()
-        if self.VISUAL_INSPECTION:
+        if self.visual_inspection:
             time.sleep(1.0 / 240.0)
 
 

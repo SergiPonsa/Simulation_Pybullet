@@ -1,5 +1,9 @@
 <robot
   name="JACO3_URDF_V11" version="1.0">
+
+  <!-- Robot  -->
+
+  <!-- Base link -->
   <link
     name="base_link">
     <inertial>
@@ -22,7 +26,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/base_link.STL" />
+          filename="../stl/Robot/Base_Link.stl" />
       </geometry>
       <material
         name="">
@@ -36,10 +40,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/base_link.STL" />
+          filename="../stl/Robot/Base_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- shoulder link -->
   <link
     name="Shoulder_Link">
     <inertial>
@@ -62,7 +68,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/meshes/Shoulder_Link.STL" />
+          filename="../stl/Robot/Shoulder_Link.stl" />
       </geometry>
       <material
         name="">
@@ -76,10 +82,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/meshes/Shoulder_Link.STL" />
+          filename="../stl/Robot/Shoulder_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- Base- Shoulder joint -->
   <joint
     name="Actuator1"
     type="continuous">
@@ -96,6 +104,8 @@
       effort="39"
       velocity="0.8727" />
   </joint>
+
+  <!-- Half Arm1 link -->
   <link
     name="HalfArm1_Link">
     <inertial>
@@ -118,7 +128,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/HalfArm1_Link.STL" />
+          filename="../stl/Robot/HalfArm1_Link.stl" />
       </geometry>
       <material
         name="">
@@ -132,10 +142,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/HalfArm1_Link.STL" />
+          filename="../stl/Robot/HalfArm1_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- Shoulder - HalfArm1 joint -->
   <joint
     name="Actuator2"
     type="revolute">
@@ -154,6 +166,8 @@
       effort="39"
       velocity="0.8727" />
   </joint>
+
+  <!-- HalfArm2 link -->
   <link
     name="HalfArm2_Link">
     <inertial>
@@ -176,7 +190,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/HalfArm2_Link.STL" />
+          filename="../stl/Robot/HalfArm2_Link.stl" />
       </geometry>
       <material
         name="">
@@ -190,10 +204,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/HalfArm2_Link.STL" />
+          filename="../stl/Robot/HalfArm2_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- HalfArm1 -HalfArm2 joint -->
   <joint
     name="Actuator3"
     type="continuous">
@@ -210,6 +226,8 @@
       effort="39"
       velocity="0.8727" />
   </joint>
+
+  <!-- ForeArm Link -->
   <link
     name="ForeArm_Link">
     <inertial>
@@ -232,7 +250,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/ForeArm_Link.STL" />
+          filename="../stl/Robot/ForeArm_Link.stl" />
       </geometry>
       <material
         name="">
@@ -246,10 +264,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/ForeArm_Link.STL" />
+          filename="../stl/Robot/ForeArm_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- HalfArm2 - ForeArm joint -->
   <joint
     name="Actuator4"
     type="revolute">
@@ -268,6 +288,8 @@
       effort="39"
       velocity="0.8727" />
   </joint>
+
+  <!-- SphericalWrist1 Link -->
   <link
     name="SphericalWrist1_Link">
     <inertial>
@@ -290,7 +312,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/SphericalWrist1_Link.STL" />
+          filename="../stl/Robot/SphericalWrist1_Link.stl" />
       </geometry>
       <material
         name="">
@@ -304,10 +326,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/SphericalWrist1_Link.STL" />
+          filename="../stl/Robot/SphericalWrist1_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- ForeArm -SphericalWrist1 joint -->
   <joint
     name="Actuator5"
     type="continuous">
@@ -324,6 +348,8 @@
       effort="9"
       velocity="0.8727" />
   </joint>
+
+  <!-- SphericalWrist2 Link -->
   <link
     name="SphericalWrist2_Link">
     <inertial>
@@ -346,7 +372,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/SphericalWrist2_Link.STL" />
+          filename="../stl/Robot/SphericalWrist2_Link.stl" />
       </geometry>
       <material
         name="">
@@ -360,10 +386,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/SphericalWrist2_Link.STL" />
+          filename="../stl/Robot/SphericalWrist2_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- SphericalWrist1 - SphericalWrist2 joint -->
   <joint
     name="Actuator6"
     type="revolute">
@@ -382,6 +410,8 @@
       effort="9"
       velocity="0.8727" />
   </joint>
+
+  <!-- Bracelet Link -->
   <link
     name="Bracelet_Link">
     <inertial>
@@ -404,7 +434,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/Bracelet_Link.STL" />
+          filename="../stl/Robot/Bracelet_Link.stl" />
       </geometry>
       <material
         name="">
@@ -418,10 +448,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="/usr/work2/repo/URDF2MJCF/models/Bracelet_Link.STL" />
+          filename="../stl/Robot/Bracelet_Link.stl" />
       </geometry>
     </collision>
   </link>
+
+  <!-- SphericalWrist2 - Bracelet joint -->
   <joint
     name="Actuator7"
     type="continuous">
@@ -438,9 +470,13 @@
       effort="9"
       velocity="0.8727" />
   </joint>
+
+  <!-- EndEffector Link -->
   <link
     name="EndEffector_Link">
   </link>
+
+  <!-- Bracelet - EndEffector joint -->
   <joint
     name="EndEffector"
     type="fixed">
@@ -453,5 +489,17 @@
       link="EndEffector_Link" />
     <axis
       xyz="0 0 0" />
+  </joint>
+-->
+  <!--################################################
+  ########          connect model                #####
+  ####################################################-->
+
+  <!-- connect arm to world -->
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.0"/>
   </joint>
 </robot>
