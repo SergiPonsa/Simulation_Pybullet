@@ -29,25 +29,18 @@ class Robot():
                 root = "",
                 robot_urdf = "",
 
-                robot_start_pos = [0, 0, 0],
-                robot_start_orien = p.getQuaternionFromEuler([0, 0, 0]),
+                robot_launch_pos = [0, 0, 0],
+                robot_launch_orien = p.getQuaternionFromEuler([0, 0, 0]),
 
-                robot_conection_to_tool_name = "",
+                last_robot_joint_name = "",
                 robot_control_joints = [],
                 robot_mimic_joints_name = [],
                 robot_mimic_joints_master = [],
                 robot_mimic_multiplier = [],
 
-                nullspace == True,
-                home_position = [-0.992, -1.157, 1.323, -1.720, -1.587, 0.0],
+                nullspace = True,
+                home_angles = [-0.992, -1.157, 1.323, -1.720, -1.587, 0.0],
                 visual_inspection = True,
-
-                tool_class = "",
-                tool_urdf = "",
-                tool_control_joints = [],
-                tool_mimic_joints_name = [],
-                tool_mimic_joints_master = [],
-                tool_mimic_multiplier = [],
 
                 tcp_offset_pos = [0.0, 0.0, 0.0],
                 tcp_offset_orien = [0.0, 0.0, 0.0]):
@@ -58,21 +51,15 @@ class Robot():
         root (str): root directory for local files
         robot_urdf (str): name and location of robot URDF file,
 
-        robot_start_pos (list double | x,y,z in m): determine the robot base position
-        robot_start_orien (list double | rx,ry,rz in radiants): determine the robot base orientation
+        robot_launch_pos (list double | x,y,z in m): determine the robot base position
+        robot_launch_orien (list double | rx,ry,rz in radiants): determine the robot base orientation
 
 
-        robot_conection_to_tool_name (str): URDF name of the link/joint which connect with the tool
+        last_robot_joint_name (str): URDF name of the las robot joint, the id it's the same than the last robot link
         robot_control_joints (list of str): name robot control joints in right order for inverse kinematics
         robot_mimic_joints_name (list of str): name robot joints which follow control joints in order to control them
         robot_mimic_joints_master (list of str): name joints which master each mimic joint,
         robot_mimic_multiplier (list of doubles): value of increase of the mimic respect the by increase of the master
-
-        tool_urdf (str): name and location of tool URDF file
-        tool_control_joints (list of str): name tool control joints in order to control them
-        tool_mimic_joints_name (list of str): name tool joints which follow control joints in order to control them
-        tool_mimic_joints_master (list of str): name joints which master each mimic joint
-        tool_mimic_multiplier (list of doubles): value of increase of the mimic respect the by increase of the master
 
         tcp_offset_pos (list of doubles | x,y,z in m): position offset referent to the robot_conection_to_tool_name
         tcp_offset_orien (list of doubles | rx,ry,rz in rad RPY): position offset referent to the robot_conection_to_tool_name
@@ -87,257 +74,291 @@ class Robot():
         self.urdf_root = urdf_root
         self.robot_urdf = os.path.join(root, robot_urdf)
 
-        self.robot_start_pos = robot_start_pos
-        self.robot_start_orien = robot_start_orien
+        self.robot_launch_pos = robot_launch_pos
+        self.robot_launch_orien = robot_launch_orien
 
-        self.robot_conection_to_tool_name = robot_conection_to_tool_name
+        self.last_robot_joint_name = last_robot_joint_name
         self.robot_control_joints = robot_control_joints
         self.robot_mimic_joints_name = []
         self.robot_mimic_joints_master = []
         self.robot_mimic_multiplier = []
 
         self.nullspace = nullspace
-        self.home_position = home_position
+        self.home_angles = home_angles
         self.visual_inspection = visual_inspection
 
         self.tcp_offset_pos = tcp_offset_pos
         self.tcp_offset_orien = tcp_offset_orien
 
-        self.gripper_main_control_joint = gripper_main_control_joint
-        self.mimic_joint_name = mimic_joint_name
-        self.mimic_multiplier = mimic_multiplier
-
-
         # initialize variables
         self.robot_control_joints_index = [0, 0, 0, 0, 0, 0]  # to avoid errors
         self.opening_length = 0.085  # start with the gripper open
 
-        # launch robot
-        self.robotID = p.loadURDF(os.path.join(root, "urdf/ur5_rf85.urdf"), robotStartPos, robotStartOrien,
+        # launch robot in the world
+        self.robot_id = p.loadURDF(os.path.join(root, "urdf/ur5_rf85.urdf"), robotStartPos, robotStartOrien,
                                   flags=p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT)
+
         # robot data structure
-        jointTypeList = ["REVOLUTE", "PRISMATIC", "SPHERICAL", "PLANAR", "FIXED"]
-        jointInfo = namedtuple("jointInfo",
-                               ["id", "name", "type", "lowerLimit", "upperLimit", "maxForce", "maxVelocity"])
+        joint_type_list = ["REVOLUTE", "PRISMATIC", "SPHERICAL", "PLANAR", "FIXED"]
+
+        joint_info = namedtuple("jointInfo",
+                               ["id", "name", "type","damping","friction","lower_limit", "upper_limit", "max_force", "max_velocity"])
+
         self.joints = AttrDict()
         self.joint_names = []
+
         # get robot data from urdf
-        numJoints = p.getNumJoints(self.robotID)
-        for i in range(numJoints):
-            info = p.getJointInfo(self.robotID, i)
-            jointID = info[0]
-            jointName = info[1].decode("utf-8")
-            self.joint_names.append(jointName)
-            jointType = jointTypeList[info[2]]
-            jointLowerLimit = info[8]
-            jointUpperLimit = info[9]
-            jointMaxForce = info[10]
-            jointMaxVelocity = info[11]
-            singleInfo = jointInfo(jointID, jointName, jointType, jointLowerLimit, jointUpperLimit, jointMaxForce,
-                                   jointMaxVelocity)
-            self.joints[singleInfo.name] = singleInfo
-            # get data from control joints
+
+        #get data of the joints
+        #the id of the joint it's the same than their children link
+        num_joints = p.getNumJoints(self.robot_id)
+        for i in range(num_joints):
+            info = p.getJointInfo(self.robot_id, i)
+            joint_id = info[0]
+            joint_name = info[1].decode("utf-8")
+            self.joint_names.append(jointName) # I use it to search info in the dicctionary
+            joint_type = jointTypeList[info[2]]
+            joint_damping
+            joint_lower_limit = info[8]
+            joint_upper_limit = info[9]
+            joint_max_force = info[10]
+            joint_max_velocity = info[11]
+            single_info = jointInfo(joint_id, joint_name, joint_type, joint_lower_limit, joint_upper_limit, joint_max_force,
+                                   joint_max_force)
+            self.joints[single_info.name] = single_info
+
+
+            if jointName == self.last_robot_joint_name:
+                self.last_robot_joint_index = i
+
+            #while we get data of the joints i get the index of the control joints
             for k in range(len(self.robot_control_joints)):
                 if (jointName == self.robot_control_joints[k]):
                     self.robot_control_joints_index[k] = i
-            if jointName == self.last_robot_joint_name:
-                self.last_robot_joint_index = i
-        self.joint_param_value=home
+
+
+        # Null space parameters
 
         # parameters for the nullspace
-        ll = []
-        ul = []
-        jr = []
-        rp = []
-        # get robot data from urdf
-        numJoints = p.getNumJoints(self.robotID)
+        ll = [] #lower limit
+        ul = [] #upper limit
+        get data from control joints get data from control jointsjr = [] # joint variance range
+        rp = [] # the value it search to be closer to, the inverse kinematics
+
+        # get robot data from the dicctionary
+        numJoints = p.getNumJoints(self.robot_id)
         for i in range(numJoints):
-            ll.append(self.joints[self.joint_names[i]].lowerLimit)
-            ul.append(self.joints[self.joint_names[i]].upperLimit)
+            ll.append(self.joints[self.joint_names[i]].lower_limit)
+            ul.append(self.joints[self.joint_names[i]].upper_limit)
             jr.append(
-                abs(self.joints[self.joint_names[i]].lowerLimit) + abs(self.joints[self.joint_names[i]].upperLimit))
+                abs(self.joints[self.joint_names[i]].lower_limit) + abs(self.joints[self.joint_names[i]].upper_limit))
             rp.append(0)
 
         # Tell that the solution has to be near to the home position
         for i in range(len(self.home)):
             rp[i] = self.home[i]
+
         self.lower_limit=ll
         self.upper_limit=ul
         self.joint_range=jr
         self.resting_pose=rp
 
-    def move_joints(self, joint_param_value=None, wait=True):
+    def move_joints(self, joint_param_value = self.home_angles, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 256, error_threshold = 10 ** -2):
         """Class method to control robot position by passing joint angles
-        joint_param_value (list): joint angles aimed at"""
-        if joint_param_value is None:
-            joint_param_value = self.joint_param_value
+        joint_param_value (list): joint angles aimed to reach
+        desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
+        desired_vel_per_one (double): the value in per 1 of the maximum joint velocity to be applied
+        wait (boolean): if we want to apply the control until the error is greater to the error threshold
+                        or the control it's applied more than counter_max times
+        counter_max: To apply maximum this amount of times the control
+        error_threshold: The acceptable difference between the robot joints and the target joints
+        """
 
         reached = False
         counter = 0
         while not reached:
+
             counter += 1
-            # change joint angles
+            # Define the control to be applied
             for i in range(len(self.robot_control_joints)):
-                p.setJointMotorControl2(self.robotID, self.joints[self.robot_control_joints[i]].id,
-                                        p.POSITION_CONTROL, targetPosition=joint_param_value[i],
-                                        force=self.joints[self.robot_control_joints[i]].maxForce,
-                                        maxVelocity=self.joints[self.robot_control_joints[i]].maxVelocity)
+
+                #Control Joints
+                p.setJointMotorControl2(self.robot_id, self.joints[self.robot_control_joints[i]].id,
+                                        p.POSITION_CONTROL, targetPosition = joint_param_value[i],
+                                        force = self.joints[self.robot_control_joints[i]].max_force * desired_force_per_one,
+                                        maxVelocity = self.joints[self.robot_control_joints[i]].max_velocity * desired_vel_per_one)
+                #Mimic joints
+                if (len(self.mimic_joint_name)>0):
+                    for j in range(len(self.mimic_joint_name)):
+                        follow_joint = self.joints[self.robot_mimic_joints_name[j]]
+                        master_joint = self.joints[self.robot_mimic_joints_master[j]]
+
+                        if (master_joint == self.robot_control_joints[i]):
+
+                            p.setJointMotorControl2(self.robot_id, joint.id, p.POSITION_CONTROL,
+                                                    targetPosition = joint_param_value[i] * self.robot_mimic_multiplier[i],
+                                                    force = follow_joint.max_force * desired_force_per_one,
+                                                    maxVelocity = follow_joint.max_velocity * desired_vel_per_one,
+                                                    positionGain = 1,
+                                                    velocityGain = 1)
+
+            #If we apply the control without care if another action modify it's trajectory and apply only 1 simulation
             if wait:
                 # make step simulation
                 self.step_simulation()
-                if self.VISUAL_INSPECTION:
-                    time.sleep(1. / 240.)  # to make the simulation of the GUI in real time
                 # check position reached
                 for i in range(len(self.robot_control_joints)):
-                    jointstate_aux = p.getJointState(self.robotID, self.robot_control_joints_index[i])
+                    jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
                     if i == 0:
                         jointstatepos = [jointstate_aux[0]]
                         jointdiff = abs(jointstatepos[i] - self.home[i])
                     else:
                         jointstatepos.append(jointstate_aux[0])
                         jointdiff = jointdiff + abs(jointstatepos[i] - self.home[i])
-                if (jointdiff <= 10 ** -2) or (counter > 256):
+                if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
             else:
                 reached = True
 
-    def get_actual_joints_angle(self):
+    def get_actual_control_joints_angle(self):
         for i in range(len(self.robot_control_joints)):
-            jointstate_aux = p.getJointState(self.robotID, self.robot_control_joints_index[i])
+            joint_state_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
             if i == 0:
-                jointstatepos = [jointstate_aux[0]]
+                joint_state_pos = [jointstate_aux[0]]  # these indexes are: [0]change joint anglesPosition, [1]Speed, [2]Reactive str, [3]Torque
             else:
-                jointstatepos.append(jointstate_aux[0])
-        return jointstatepos
+                joint_state_pos.append(jointstate_aux[0])
+        return joint_state_pos
 
-    def get_actual_joints_torque(self):
+    def get_actual_control_joints_velocity(self):
         for i in range(len(self.robot_control_joints)):
-            jointstate_aux = p.getJointState(self.robotID, self.robot_control_joints_index[i])
+            joint_state_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
             if i == 0:
-                jointstatetorque = [
-                    jointstate_aux[3]]  # these indexes are: [0]Position, [1]Speed, [2]Reactive str, [3]Torque
+                joint_state_velocity = [joint_state_aux[1]]  # these indexes are: [0]change joint anglesPosition, [1]Speed, [2]Reactive str, [3]Torque
             else:
-                jointstatetorque.append(jointstate_aux[3])
-        return jointstatetorque
+                joint_state_velocity.append(joint_state_aux[1])
+        return joint_state_velocity
 
-    def get_actual_joints_full(self):
+    def get_actual_control_joints_torque(self):
+        for i in range(len(self.robot_control_joints)):
+            joint_state_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
+            if i == 0:
+                joint_state_torque = [joint_state_aux[3]]  # these indexes are: [0]change joint anglesPosition, [1]Speed, [2]Reactive str, [3]Torque
+            else:
+                joint_state_torque.append(joint_state_aux[3])
+        return joint_state_torque
+
+    def get_actual_control_joints_full(self):
         jointsdata=[0]*3*len(self.robot_control_joints)
         for i in range(len(self.robot_control_joints)):
-            jointstate_aux = p.getJointState(self.robotID, self.robot_control_joints_index[i])
+            jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
             for j,k in enumerate([0,1,3]):
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, nullspace=True):
-        """Class method to control the robot position by passing space coordinates and orientation and working out the correspondence to
-        joint angles to call 'move_joints'
-        pose (list): pose, i.e., position + orientation (as roll, pitch, yaw)"""
+    def move_cartesian(self, pose, max_iterations = 500 ,nullspace = self.nullspace, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 256, error_threshold = 10 ** -2):
+
+        """Class method to control the robot position by passing space coordinates
+         and orientation and working out the correspondence to joint angles
+         to call 'move_joints'
+
+        pose (list): pose, i.e., position + orientation (as roll, pitch, yaw)
+        max_iterations (int): maximum number of iterations to solve the inverse kinematics
+        nullspace (boolean): find the nearest to the defined position and limits or the nearest to the actual position
+
+        The rest of parameters are the move_joints function parameters
+        """
 
         # Equations to ensure it's inside the reachable area (NOT NEEDED!)
-        '''# maixmum and minimum are blocked in the debug, no need to check
-        if(pos_param_value[i]<pos_param_min_value[i]):
-            pos_param_value[i]=pos_param_min_value[i]
-        elif (pos_param_value[i]>pos_param_max_value[i]):
-            pos_param_value[i]=pos_param_max_value[i]
-        # check y is inside the rechable disk equation [x,y], h & k center
-        # (x−h)^2+(y−k)^2=r^2
-        try:
-            if ( ( (pos_param_value[0]-0.0)**2 + (pos_param_value[1]-0.0)**2 ) > ( robot_reachability_radius**2 ) ):
-                if(pos_param_value[1] > 0):
-                    pos_param_value[1] = (robot_reachability_radius**2 - pos_param_value[0]**2)**0.5
-                else:
-                    pos_param_value[1] = -(robot_reachability_radius**2 - pos_param_value[0]**2)**0.5
-        except: # If can't compute, means x² > radius so
-            if(pos_param_value[1] > 0):
-                pos_param_value[0] =robot_reachability_radius
-            else:
-                pos_param_value[0] =-robot_reachability_radius
-            pos_param_value[1] =0.0
-        # check z is inside the rechable sphere equation
-        # (x−h)^2+(y−k)^2+(z−l)^2=r^2
-        try:
-            if ( ( (pos_param_value[0]-0.0)**2 +(pos_param_value[1]-0.0)**2 + (pos_param_value[2]-0.0)**2 ) > ( robot_reachability_radius**2 ) ):
-                if(pos_param_value[2] > 0):
-                    pos_param_value[2] = ((robot_reachability_radius**2 - pos_param_value[1]**2 - pos_param_value[0]**2 )**0.5)
-                else:
-                    pos_param_value[2] = -((robot_reachability_radius**2 - pos_param_value[1]**2 - pos_param_value[0]**2 )**0.5)
-        except:                      # if can't compute, means x² +y²  > radius so
-            pos_param_value[2] =0.0
-        # pose[3]=urdf_error_correct_orien_e[0] ???'''
 
         if (nullspace == True):
 
-            inv_result = p.calculateInverseKinematics(self.robotID, self.last_robot_joint_index, pose[0], pose[1],
-                                                      maxNumIterations=500,
-                                                      lowerLimits=self.lower_limit,
-                                                      upperLimits=self.upper_limit,
-                                                      jointRanges=self.joint_range,
-                                                      restPoses=self.resting_pose)
+            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],
+                                                      maxNumIterations = max_iterations,
+                                                      lowerLimits = self.lower_limit,
+                                                      upperLimits = self.upper_limit,
+                                                      jointRanges = self.joint_range,
+                                                      restPoses = self.resting_pose)
         else:
-            inv_result = p.calculateInverseKinematics(self.robotID, self.last_robot_joint_index, pose[0], pose[1],
-                                                      maxNumIterations=500)
+            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],
+                                                      maxNumIterations = max_iteration)
 
-        self.joint_param_value = [inv_result[0], inv_result[1], inv_result[2], inv_result[3], inv_result[4],
+        joint_param_value = [inv_result[0], inv_result[1], inv_result[2], inv_result[3], inv_result[4],
                              inv_result[5]]
 
         # perform control action with 'joint_param_value'
-        self.move_joints(wait=False)
+        self.move_joints(joint_param_value = joint_param_value, wait = False)
 
     def move_home(self):
         """Class method that sends robot to 'home' position"""
-        self.move_joints(self.home)
+        self.move_joints(joint_param_value = self.home)
 
-    def get_actual_tcp_pose(self, print_value=False):
-        last_robot_link_info = p.getLinkState(self.robotID, self.last_robot_joint_index)
+    def get_actual_tcp_pose(self, print_value=False,referent_to_base = False):
+
+        last_robot_link_info = p.getLinkState(self.robot_id, self.last_robot_joint_index)
         world_last_robot_link_position = last_robot_link_info[0]
         world_last_robot_link_orientation_q = last_robot_link_info[1]
         world_last_robot_link_orientation_e = p.getEulerFromQuaternion(last_robot_link_info[1])
+
         if print_value:
             print("world's last robot joint position", world_last_robot_link_position,
                   world_last_robot_link_orientation_e)
+
+        #Apply the rotation of the TCP, (the base of the TCP)
         last_robot_link_tcp_base_position = [0, 0, 0]
         last_robot_link_tcp_base_orientation_e = [self.urdf_error_correct_orien_e[0] + self.tcp_offset_orien_e[0],
                                                   self.urdf_error_correct_orien_e[1] + self.tcp_offset_orien_e[1],
                                                   self.urdf_error_correct_orien_e[2] + self.tcp_offset_orien_e[2]]
         last_robot_link_tcp_base_orientation_q = p.getQuaternionFromEuler(last_robot_link_tcp_base_orientation_e)
 
-        # transform from TCP base to world
+        # transform from TCP base to world 0,0,0
         world_tcp_base_pose = p.multiplyTransforms(world_last_robot_link_position, world_last_robot_link_orientation_q,
                                                    last_robot_link_tcp_base_position,
                                                    last_robot_link_tcp_base_orientation_q)
+        #Apply the translation to the tcp point
         tcp_base_tcp_end_position = self.tcp_offset_pos
         tcp_base_tcp_end_orientation_q = p.getQuaternionFromEuler([0, 0, 0])
 
-        # transform from TCP end to world
+        # transform from TCP end to world 0,0,0
         world_tcp_end_pose = p.multiplyTransforms(world_tcp_base_pose[0], world_tcp_base_pose[1],
                                                   tcp_base_tcp_end_position, tcp_base_tcp_end_orientation_q)
 
+
         if print_value:
             print("\n", "world to tcp end position", world_tcp_end_pose[0],
-                  p.getEulerFromQuaternion(world_tcp_end_pose[1]))
+                     p.getEulerFromQuaternion(world_tcp_end_pose[1]))
         return world_tcp_end_pose
 
-    def get_actual_tcp_pose_world_oriented(self, print_value=False):
-        world_tcp_end_pose = self.get_actual_tcp_pose()
-        # I want world_tcp_end_worldoriented_pose = world_tcp_end_pose *tcp_end_tcp_end_worldoriented_pose
-        # object position and TCP position are the same, the only difference is a rotation
+    def get_robot_base_pose_from_world_pose(world_position,world_orientation_q):
 
+        [world_robot_base_position, world_robot_base_orientation_q] = p.getBasePositionAndOrientation(self.robot_id)
+        [robot_base_world_position, robot_base_world_orientation_q] = p.invertTransform (world_robot_base_position, world_robot_base_orientation_q)
+
+        return p.multiplyTransforms(robot_base_world_position, robot_base_world_orientation_q,world_position,world_orientation_q)
+
+    def get_actual_tcp_pose_world_oriented(self, print_value=False):
+        """ I want world_tcp_end_worldoriented_pose = world_tcp_end_pose *tcp_end_tcp_end_worldoriented_pose
+         object position and TCP position are the same, the only difference is a rotation """
+
+        world_tcp_end_pose = self.get_actual_tcp_pose()
         world_tcp_end_worldoriented_pose = p.multiplyTransforms(world_tcp_end_pose[0], world_tcp_end_pose[1],
                                                                 [0.0, 0.0, 0.0],
                                                                 p.getQuaternionFromEuler([-3.14, 0.0, 0.0]))
 
         return world_tcp_end_worldoriented_pose
 
-    def tcp_go_pose(self, target_pos, target_orien_q, gripper_object_orien_e=[3.14, 0.0, 0.0], print_value=False):
+    def tcp_go_pose(self, target_pos, target_orien_q, tool_orien_e=[3.14, 0.0, 0.0], print_value=False):
         """Class method that controls robot position by pose (i.e., position + orientation)
         target_pos (list): position
-        target_orien_q (list): target orientation, in quaternions"""
+        target_orien_q (list): target orientation, in quaternions
+
+        return the position to be given to the tcp looking to that object"""
+
         world_object_position = target_pos
         world_object_orientation_q = target_orien_q
 
         # object position and TCP position are the same, the only difference is a rotation
         object_tcp_end_position = [0.0, 0.0, 0.0]
-        object_tcp_end_orientation_q = p.getQuaternionFromEuler(gripper_object_orien_e)
+        object_tcp_end_orientation_q = p.getQuaternionFromEuler(tool_orien_e)
 
         # get the world_TCP pose (rotate)
         world_tcp_end_pose = p.multiplyTransforms(world_object_position, world_object_orientation_q,
@@ -369,116 +390,6 @@ class Robot():
 
         return world_lastlink_pose
 
-    def control_gripper(self, gripper_opening_length): # Refactor this!!
-        self.opening_length = gripper_opening_length
-        if gripper_opening_length > 0.085:
-            gripper_opening_length = 0.085
-            #print("length too wide, open only 0.085")
-        if gripper_opening_length < 0.0:
-            gripper_opening_length = 0.0
-            #print("length negative, open only 0.0")
-
-        # do the grasping
-        gripper_opening_angle = 0.715 - math.asin((gripper_opening_length - 0.010) / 0.1143)  # angle calculation
-
-        # gripper_opening_angle_actual = p.getJointState(self.robotID,self.joints[self.gripper_main_control_joint].id)
-        # control finger tips
-        for k in range(len(self.gripper_fingers_control_name)):
-            joint = self.joints[self.gripper_fingers_control_name[k]]
-            if ((self.gripper_fingers_control_name[k] == "robotiq_85_right_finger_tip_z") or (
-                    self.gripper_fingers_control_name[k] == "robotiq_85_left_finger_tip_z")):
-                # param = 0.1143 * math.cos(gripper_opening_angle-0.715)
-                param = 0.1143 * math.cos(gripper_opening_angle - 0.715) + 0.01
-            elif (self.gripper_fingers_control_name[k] == "robotiq_85_right_finger_tip_y"):
-                # param = -1 * ((self.opening_length/2)+0.01)
-                param = 0.009 + (self.opening_length / 2)
-            elif (self.gripper_fingers_control_name[k] == "robotiq_85_left_finger_tip_y"):
-                # param = ((self.opening_length/2)+0.01)
-                param = -0.009 - (self.opening_length / 2)
-            p.setJointMotorControl2(self.robotID, joint.id, p.POSITION_CONTROL,
-                                    targetPosition=param,
-                                    force=joint.maxForce,
-                                    maxVelocity=joint.maxVelocity,
-                                    positionGain=1.5,
-                                    velocityGain=1.1)
-
-        p.setJointMotorControl2(self.robotID,
-                                self.joints[self.gripper_main_control_joint].id,
-                                p.POSITION_CONTROL,
-                                targetPosition=gripper_opening_angle,
-                                force=self.joints[self.gripper_main_control_joint].maxForce,
-                                maxVelocity=self.joints[self.gripper_main_control_joint].maxVelocity,
-                                positionGain=1.5,  # gain position error modification
-                                velocityGain=1.1)  # gain velocity error modification
-
-        for i in range(len(self.mimic_joint_name)):
-            joint = self.joints[self.mimic_joint_name[i]]
-            p.setJointMotorControl2(self.robotID, joint.id, p.POSITION_CONTROL,
-                                    targetPosition=gripper_opening_angle * self.mimic_multiplier[i],
-                                    force=joint.maxForce,
-                                    maxVelocity=joint.maxVelocity,
-                                    positionGain=1.5,
-                                    velocityGain=1.1)
-
-        # simulate to move the gripper
-        p.stepSimulation()
-        if self.VISUAL_INSPECTION:
-            time.sleep(1.0 / 240.0)
-
-        # update the joints to be real, get the real length an compute the real z and gripper positions
-        opening_length_sensor = self.gripper_length()
-
-        try:
-            gripper_opening_angle = 0.715 - math.asin(
-                (opening_length_sensor - 0.010) / 0.1143)  # real angle calculation
-        except ValueError:
-            gripper_opening_angle = 0.715
-
-        # move joints to real state to make the photo
-        for k in range(len(self.gripper_fingers_control_name)):
-            joint = self.joints[self.gripper_fingers_control_name[k]]
-            if ((self.gripper_fingers_control_name[k] == "robotiq_85_right_finger_tip_z") or (
-                    self.gripper_fingers_control_name[k] == "robotiq_85_left_finger_tip_z")):
-                # param = 0.1143 * math.cos(gripper_opening_angle-0.715)
-                param = 0.1143 * math.cos(gripper_opening_angle - 0.715) + 0.01
-            elif (self.gripper_fingers_control_name[k] == "robotiq_85_right_finger_tip_y"):
-                # param = -1 * ((self.opening_length/2)+0.01)
-                param = 0.009 + (self.opening_length / 2)
-            elif (self.gripper_fingers_control_name[k] == "robotiq_85_left_finger_tip_y"):
-                # param = ((self.opening_length/2)+0.01)
-                param = -0.009 - (self.opening_length / 2)
-            p.setJointMotorControl2(self.robotID, joint.id, p.POSITION_CONTROL,
-                                    targetPosition=param,
-                                    force=joint.maxForce,
-                                    maxVelocity=joint.maxVelocity,
-                                    positionGain=1.5,
-                                    velocityGain=1.1)
-
-        p.setJointMotorControl2(self.robotID,
-                                self.joints[self.gripper_main_control_joint].id,
-                                p.POSITION_CONTROL,
-                                targetPosition=gripper_opening_angle,
-                                force=self.joints[self.gripper_main_control_joint].maxForce,
-                                maxVelocity=self.joints[self.gripper_main_control_joint].maxVelocity,
-                                positionGain=1.5,  # gain position error modification
-                                velocityGain=1.1)  # gain velocity error modification
-
-        for i in range(len(self.mimic_joint_name)):
-            joint = self.joints[self.mimic_joint_name[i]]
-            p.setJointMotorControl2(self.robotID, joint.id, p.POSITION_CONTROL,
-                                    targetPosition=gripper_opening_angle * self.mimic_multiplier[i],
-                                    force=joint.maxForce,
-                                    maxVelocity=joint.maxVelocity,
-                                    positionGain=1.5,
-                                    velocityGain=1.1)
-
-    def gripper_length(self):
-        """Class method that calculates the distance between the fingers of the gripper"""
-        right_finger_tip_position = p.getJointState(self.robotID, self.joints["robotiq_85_right_finger_tip_y"].id)
-        left_finger_tip_position = p.getJointState(self.robotID, self.joints["robotiq_85_left_finger_tip_y"].id)
-        gripper_opening_length = abs(right_finger_tip_position[0]) + abs(left_finger_tip_position[0]) - (
-            0.009) * 2  # minus the gap allowed
-        return gripper_opening_length
 
     def get_object_position(self, objectID, modify_center=[0.0, 0.0, 0.0], orientation_correction_e=[-1.57, 0, 1.57]):
         self.objectIDpick = objectID
@@ -503,8 +414,7 @@ class Robot():
             t = int(time_wait * 20)
         for i in range(t):
             self.step_simulation()
-            if self.VISUAL_INSPECTION:
-                time.sleep(1.0 / 240.0)
+
 
     def step_simulation(self):
         """Step simulation method"""
@@ -521,7 +431,7 @@ if __name__ == '__main__':
     p.setGravity(0.0, 0.0, -9.81)
 
     # create robot instance with default configuration
-    robot = ur5_rf85()
+    robot = Robot()
     robot.move_home()
     try:
         while True:
