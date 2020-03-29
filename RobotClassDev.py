@@ -90,8 +90,7 @@ class Robot():
         self.tcp_offset_pos = tcp_offset_pos
         self.tcp_offset_orien = tcp_offset_orien
 
-        # initialize variables
-        self.robot_control_joints_index = [0, 0, 0, 0, 0, 0]  # to avoid errors
+
         self.opening_length = 0.085  # start with the gripper open
 
         print(self.robot_urdf)
@@ -114,6 +113,8 @@ class Robot():
         #get data of the joints
         #the id of the joint it's the same than their children link
         num_joints = p.getNumJoints(self.robot_id)
+        # initialize variables
+        self.robot_control_joints_index = np.zeros(num_joints, dtype=int)  # to avoid errors
         for i in range(num_joints):
             info = p.getJointInfo(self.robot_id, i)
             joint_id = info[0]
@@ -195,8 +196,8 @@ class Robot():
                                         force = self.joints[self.robot_control_joints[i]].max_force * desired_force_per_one,
                                         maxVelocity = self.joints[self.robot_control_joints[i]].max_velocity * desired_vel_per_one)
                 #Mimic joints
-                if (len(self.mimic_joint_name)>0):
-                    for j in range(len(self.mimic_joint_name)):
+                if (len(self.robot_mimic_joints_name)>0):
+                    for j in range(len(self.robot_mimic_joints_name)):
                         follow_joint = self.joints[self.robot_mimic_joints_name[j]]
                         master_joint = self.joints[self.robot_mimic_joints_master[j]]
 
@@ -218,10 +219,10 @@ class Robot():
                     jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
                     if i == 0:
                         jointstatepos = [jointstate_aux[0]]
-                        jointdiff = abs(jointstatepos[i] - self.home[i])
+                        jointdiff = abs(jointstatepos[i] - self.home_angles[i])
                     else:
                         jointstatepos.append(jointstate_aux[0])
-                        jointdiff = jointdiff + abs(jointstatepos[i] - self.home[i])
+                        jointdiff = jointdiff + abs(jointstatepos[i] - self.home_angles[i])
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
             else:
