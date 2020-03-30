@@ -37,13 +37,15 @@ class Robot():
                 robot_mimic_joints_name = [],
                 robot_mimic_joints_master = [],
                 robot_mimic_multiplier = [],
+                tool_orient_e = [3.14,0,0],
 
                 nullspace = True,
                 home_angles = [-0.992, -1.157, 1.323, -1.720, -1.587, 0.0],
                 visual_inspection = True,
 
                 tcp_offset_pos = [0.0, 0.0, 0.0],
-                tcp_offset_orien = [0.0, 0.0, 0.0]):
+                tcp_offset_orien_e = [0.0, 0.0, 0.0]):
+
 
         """Initialization function
 
@@ -82,13 +84,15 @@ class Robot():
         self.robot_mimic_joints_name = []
         self.robot_mimic_joints_master = []
         self.robot_mimic_multiplier = []
+        self.tool_orient_e = tool_orient_e
+
 
         self.nullspace = nullspace
         self.home_angles = home_angles
         self.visual_inspection = visual_inspection
 
         self.tcp_offset_pos = tcp_offset_pos
-        self.tcp_offset_orien = tcp_offset_orien
+        self.tcp_offset_orien_e = tcp_offset_orien_e
 
 
         self.opening_length = 0.085  # start with the gripper open
@@ -112,10 +116,10 @@ class Robot():
 
         #get data of the joints
         #the id of the joint it's the same than their children link
-        num_joints = p.getNumJoints(self.robot_id)
+        self.num_joints = p.getNumJoints(self.robot_id)
         # initialize variables
-        self.robot_control_joints_index = np.zeros(num_joints, dtype=int)  # to avoid errors
-        for i in range(num_joints):
+        self.robot_control_joints_index = np.zeros(self.num_joints, dtype=int)  # to avoid errors
+        for i in range(self.num_joints):
             info = p.getJointInfo(self.robot_id, i)
             joint_id = info[0]
             joint_name = info[1].decode("utf-8")
@@ -133,7 +137,7 @@ class Robot():
 
 
             if joint_name == self.last_robot_joint_name:
-                self.last_robot_joint_index = i
+                self.last_robot_joint_index = joint_id
 
             #while we get data of the joints i get the index of the control joints
             for k in range(len(self.robot_control_joints)):
@@ -167,7 +171,7 @@ class Robot():
         self.joint_range=jr
         self.resting_pose=rp
 
-    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 256, error_threshold = 10 ** -2):
+    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**3, error_threshold = 10 ** -3):
         """Class method to control robot position by passing joint angles
         joint_param_value (list): joint angles aimed to reach
         desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
@@ -219,12 +223,14 @@ class Robot():
                     jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
                     if i == 0:
                         jointstatepos = [jointstate_aux[0]]
-                        jointdiff = abs(jointstatepos[i] - self.home_angles[i])
+                        jointdiff = abs(jointstatepos[i] - joint_param_value[i])
                     else:
                         jointstatepos.append(jointstate_aux[0])
-                        jointdiff = jointdiff + abs(jointstatepos[i] - self.home_angles[i])
+                        jointdiff = jointdiff + abs(jointstatepos[i] - joint_param_value[i])
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
+                if (counter > counter_max):
+                    print("maximum iterations reach")
             else:
                 reached = True
 
@@ -263,7 +269,7 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, max_iterations = 500 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 256, error_threshold = 10 ** -2):
+    def move_cartesian(self, pose, max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**3, error_threshold = 10 ** -3):
 
         if (nullspace == None):
             nullspace = self.nullspace
@@ -292,12 +298,10 @@ class Robot():
         else:
             inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],
                                                       maxNumIterations = max_iteration)
-
-        joint_param_value = [inv_result[0], inv_result[1], inv_result[2], inv_result[3], inv_result[4],
-                             inv_result[5]]
+        joint_param_value = list(inv_result)
 
         # perform control action with 'joint_param_value'
-        self.move_joints(joint_param_value = joint_param_value, wait = False)
+        self.move_joints(joint_param_value = joint_param_value, wait = wait,desired_force_per_one=desired_force_per_one,desired_vel_per_one=desired_vel_per_one,counter_max=counter_max,error_threshold=error_threshold)
 
     def move_home(self):
         """Class method that sends robot to 'home' position"""
@@ -316,9 +320,9 @@ class Robot():
 
         #Apply the rotation of the TCP, (the base of the TCP)
         last_robot_link_tcp_base_position = [0, 0, 0]
-        last_robot_link_tcp_base_orientation_e = [self.urdf_error_correct_orien_e[0] + self.tcp_offset_orien_e[0],
-                                                  self.urdf_error_correct_orien_e[1] + self.tcp_offset_orien_e[1],
-                                                  self.urdf_error_correct_orien_e[2] + self.tcp_offset_orien_e[2]]
+        last_robot_link_tcp_base_orientation_e = [self.tcp_offset_orien_e[0],
+                                                  self.tcp_offset_orien_e[1],
+                                                  self.tcp_offset_orien_e[2]]
         last_robot_link_tcp_base_orientation_q = p.getQuaternionFromEuler(last_robot_link_tcp_base_orientation_e)
 
         # transform from TCP base to world 0,0,0
@@ -357,12 +361,15 @@ class Robot():
 
         return world_tcp_end_worldoriented_pose
 
-    def tcp_go_pose(self, target_pos, target_orien_q, tool_orien_e=[3.14, 0.0, 0.0], print_value=False):
+    def tcp_go_pose(self, target_pos, target_orien_q, tool_orien_e=None, print_value=False):
         """Class method that controls robot position by pose (i.e., position + orientation)
         target_pos (list): position
         target_orien_q (list): target orientation, in quaternions
 
         return the position to be given to the tcp looking to that object"""
+
+        if(tool_orien_e == None):
+            tool_orien_e = self.tool_orient_e
 
         world_object_position = target_pos
         world_object_orientation_q = target_orien_q
@@ -390,7 +397,7 @@ class Robot():
 
         # from base to last link there is only one rotatiton
         base_lastlink_position = [0.0, 0.0, 0.0]
-        base_lastlink_orientation_q = p.getQuaternionFromEuler(self.urdf_error_correct_orien_e)
+        base_lastlink_orientation_q = p.getQuaternionFromEuler([0.0,0.0,0.0])
 
         # get world's last link pose
         world_lastlink_pose = p.multiplyTransforms(world_base_pose[0], world_base_pose[1], base_lastlink_position,
