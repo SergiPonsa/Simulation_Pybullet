@@ -488,7 +488,7 @@ class Robot():
             if(link_or_joint_name == None):
                 opening_search_2 = "name"
             else:
-                opening_search_2 = "name="+str(link_or_joint_name)
+                opening_search_2 = "name=\""+str(link_or_joint_name)+"\""
             closing_search_2 = "</joint"
 
         elif((element_to_modify in link_opt)):
@@ -497,7 +497,7 @@ class Robot():
             if(link_or_joint_name == None):
                 opening_search_2 = "name"
             else:
-                opening_search_2 = "name="+str(link_or_joint_name)
+                opening_search_2 = "name=\""+str(link_or_joint_name)+"\""
             closing_search_2 = "</link"
         else:
             print("Doesn't exist the field you are asking for, check modify_elements_link and modify_elements_joint ")

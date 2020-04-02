@@ -91,8 +91,8 @@ if __name__ == '__main__':
     #Modify only one link mass , specify the name
 
     info = p.getJointInfo(robot.robot_id,robot.last_robot_joint_index)
-    LastLinkName = info[12]
-    print(LastLinkName[1])
+    LastLinkName = str(info[12], "utf-8")
+    print(LastLinkName)
 
     file_2_write = robot.create_file_to_modify(robot.robot_urdf)
     print(file_2_write)

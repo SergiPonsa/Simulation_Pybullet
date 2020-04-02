@@ -473,7 +473,21 @@
 
   <!-- EndEffector Link -->
   <link
-    name="EndEffector_Link">
+    name="EndEffector_Link" >
+    <inertial>
+      <origin
+        xyz="-0.000281 -0.011402 -0.03108"
+        rpy="0 0 0" />
+      <mass
+        value="0.0" />
+      <inertia
+        ixx="0.00"
+        ixy="0.00"
+        ixz="0.00"
+        iyy="0.00"
+        iyz="0.00"
+        izz="0.00" />
+    </inertial>
   </link>
 
   <!-- Bracelet - EndEffector joint -->
