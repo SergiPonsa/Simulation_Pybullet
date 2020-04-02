@@ -467,7 +467,7 @@ class Robot():
 
     def modify_urdf(self,path2read,path2write,element_to_modify, value , link_or_joint_name = None):
         """
-        To work with an specific name it's need it to be all together without space name=something
+        To work with an specific name it's need it to be all together without space name=something >
         """
 
 
@@ -498,6 +498,7 @@ class Robot():
                 opening_search_2 = "name"
             else:
                 opening_search_2 = "name=\""+str(link_or_joint_name)+"\""
+                print(opening_search_2)
             closing_search_2 = "</link"
         else:
             print("Doesn't exist the field you are asking for, check modify_elements_link and modify_elements_joint ")
@@ -575,6 +576,8 @@ class Robot():
 
         #Process of modification
         readf = open(path2read, "r")
+        # for line in readf :
+        #     print(line)
         writef = open(path2write, "w")
         print ("Overwriting " + path2write + " Reading " + path2read )
 
@@ -582,13 +585,14 @@ class Robot():
         for line in readf :
             auxtext = auxtext + line
             if(opening_search_1 in auxtext):
+                print("I find the first")
                 auxindex_open_1 = auxtext.find(opening_search_1)
                 auxindex_open_2 = auxtext.find(opening_search_2, auxindex_open_1,)
                 auxindex_close_1 = auxtext.find(closing_search_1, auxindex_open_1)
 
                 #If it has found the opening and the closing do something else continue
                 if((auxindex_open_2 != -1) and (auxindex_close_1 != -1)):
-
+                    # print("I find the second")
                     #it's not the one I am searching so write until the close
                     if(auxindex_close_1 < auxindex_open_2):
                         #split the data to free memory
@@ -602,7 +606,7 @@ class Robot():
 
                         #If it has found the opening and the closing do something, else continue
                         if((auxindex_open_3 != -1) and (auxindex_close_2 != -1)):
-
+                            # print("I find the third")
                             #it's not the one I am searching so write until the close
                             if(auxindex_close_2 < auxindex_open_3):
                                 #split the data to free memory
@@ -616,6 +620,7 @@ class Robot():
 
                                 #If it has found the opening and the closing do something, else continue
                                 if((auxindex_open_4 != -1) and (auxindex_close_3 != -1)):
+                                    # print("I find the fourth")
                                     #it's not the one I am searching so write until the close
                                     if(auxindex_close_3 < auxindex_open_4):
                                         #split the data to free memory
@@ -627,6 +632,7 @@ class Robot():
                                         auxindex_close_4 = auxtext.find(closing_search_4, auxindex_open_4)
                                         #If it has found the opening and the closing do something, else continue
                                         if((auxindex_open_4 != -1) and (auxindex_close_4 != -1)):
+                                            print("I find all")
                                             [textwrite, auxtext] = auxtext.split(opening_search_4,1)
                                             textwrite = textwrite + opening_search_4
                                             writef.write(textwrite)
@@ -636,6 +642,10 @@ class Robot():
                                             writef.write(textwrite)
                                             #clean to read from that point
                                             auxtext = ""
+        readf.close()
+        writef.close()
+        print("Files closed")
+        time.sleep(10)
 
 
 

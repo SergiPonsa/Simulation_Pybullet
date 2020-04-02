@@ -100,6 +100,21 @@ if __name__ == '__main__':
         robot.modify_urdf(robot.robot_urdf,file_2_write,"mass",2.0,\
         link_or_joint_name=LastLinkName)
     print("created")
+
+    info = p.getJointInfo(robot.robot_id,robot.joints[robot.robot_control_joints[0]].id)
+    LinkName = str(info[12], "utf-8")
+    print(LinkName)
+
+    file_2_read = file_2_write
+    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
+
+    print(file_2_write)
+    if (file_2_write != "error"):
+        robot.modify_urdf(file_2_read,file_2_write,"mass",2.0,\
+        link_or_joint_name=LinkName)
+    print("created")
+
+
     """
     Test of functions
 
