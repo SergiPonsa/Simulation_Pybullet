@@ -171,7 +171,7 @@ class Robot():
         self.joint_range=jr
         self.resting_pose=rp
 
-    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**3, error_threshold = 10 ** -3):
+    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**4, error_threshold = 10 ** -3):
         """Class method to control robot position by passing joint angles
         joint_param_value (list): joint angles aimed to reach
         desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
@@ -269,7 +269,7 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**3, error_threshold = 10 ** -3):
+    def move_cartesian(self, pose, max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
 
         if (nullspace == None):
             nullspace = self.nullspace
@@ -439,6 +439,204 @@ class Robot():
         p.stepSimulation()
         if self.visual_inspection:
             time.sleep(1.0 / 240.0)
+
+
+    def create_file_to_modify(self,path):
+        "Create a new file where you can write without losing data"
+        aux_path = path [:-5] #copy all except the .urdf
+        for  i in range(256):
+            aux_path_2 = aux_path + "_" + str(i) + ".urdf"
+            try:
+                f = open(aux_path_2, "x")
+                f.close
+                return aux_path_2
+                break
+            except:
+                print(aux_path_2 + " already exist" )
+        return "error"
+
+    def modify_elements_joint(self):
+        "provide the options to modify the joints"
+        joint_mod = ["damping","friction","lower", "upper", "effort", "velocity"]
+        return joint_mod
+
+    def modify_elements_link(self):
+        "provide the options to modify the links"
+        link_mod = ["mass","inertia"]
+        return link_mod
+
+    def modify_urdf(self,path2read,path2write,element_to_modify, value , link_or_joint_name = None):
+        """
+        To work with an specific name it's need it to be all together without space name=something
+        """
+
+
+        #load the options
+        joint_opt = self.modify_elements_joint()
+        link_opt = self.modify_elements_link()
+
+        #elements field
+        inertial_elements = ["mass","inertia"]
+        dynamics_elements = ["damping","friction"]
+        limit_elements = ["lower", "upper", "effort", "velocity"]
+
+        #1rst and 2nd element to search
+        #Check if we have to search a joint or a link
+        if (element_to_modify in joint_opt):
+            opening_search_1 = "<joint"
+            closing_search_1 = "</joint"
+            if(link_or_joint_name == None):
+                opening_search_2 = "name"
+            else:
+                opening_search_2 = "name="+str(link_or_joint_name)
+            closing_search_2 = "</joint"
+
+        elif((element_to_modify in link_opt)):
+            opening_search_1 = "<link"
+            closing_search_1 = "</link"
+            if(link_or_joint_name == None):
+                opening_search_2 = "name"
+            else:
+                opening_search_2 = "name="+str(link_or_joint_name)
+            closing_search_2 = "</link"
+        else:
+            print("Doesn't exist the field you are asking for, check modify_elements_link and modify_elements_joint ")
+            return
+
+        #3rd element to search
+        if (element_to_modify in inertial_elements):
+            opening_search_3 = "<inertial"
+            closing_search_3 = "</inertial"
+        elif((element_to_modify in dynamics_elements)):
+            opening_search_3 = "<dynamics"
+            closing_search_3 = "/>"
+        elif((element_to_modify in limit_elements)):
+            opening_search_3 = "<limit"
+            closing_search_3 = "/>"
+        else:
+            print("Doesn't exist an element field, please add it to the function")
+            return
+
+        #4rd element to search and write
+        if (element_to_modify == "mass"):
+            opening_search_4 = "value"
+            closing_search_4 = "/>"
+            writevalue = " =  \"" + str(value) + "\" "
+
+        elif(element_to_modify == "inertia"):
+            opening_search_4 = "ixx"
+            closing_search_4 = "/>"
+
+            if(len(value) != 6):
+                print("The given inertia is wrong please insert a list of the 6 elements of inertia")
+                print("ixx, ixy, ixz, iyy, iyz, izz")
+                return
+            else:
+                writevalue = " = \"" + str(value[0]) + "\" "  + \
+                        " = \"" + str(value[1]) + "\" "  + \
+                        " = \"" + str(value[2]) + "\" "  + \
+                        " = \"" + str(value[3]) + "\" "  + \
+                        " = \"" + str(value[4]) + "\" "  + \
+                        " = \"" + str(value[5]) + "\" "
+        elif(element_to_modify == "damping"):
+            opening_search_4 = "damping"
+            closing_search_4 = "\""
+            writevalue = " = \"" + str(value)
+
+        elif(element_to_modify == "friction"):
+            opening_search_4 = "friction"
+            closing_search_4 = "/>"
+            writevalue = " = \"" + str(value) + "\" "
+
+        elif(element_to_modify == "lower"):
+            opening_search_4 = "lower"
+            closing_search_4 = "\""
+            writevalue = " = \"" + str(value)
+
+        elif(element_to_modify == "upper"):
+            opening_search_4 = "upper"
+            closing_search_4 = "\""
+            writevalue = " = \"" + str(value)
+
+        elif(element_to_modify == "effort"):
+            opening_search_4 = "effort"
+            closing_search_4 = "\""
+            writevalue = " = \"" + str(value)
+
+        elif(element_to_modify == "velocity"):
+            opening_search_4 = "velocity"
+            closing_search_4 = "/>"
+            writevalue = " = \"" + str(value)
+
+        else:
+            print("An error happend check this function")
+
+        #Everything it's defined
+
+        #Process of modification
+        readf = open(path2read, "r")
+        writef = open(path2write, "w")
+        print ("Overwriting " + path2write + " Reading " + path2read )
+
+        auxtext = ""
+        for line in readf :
+            auxtext = auxtext + line
+            if(opening_search_1 in auxtext):
+                auxindex_open_1 = auxtext.find(opening_search_1)
+                auxindex_open_2 = auxtext.find(opening_search_2, auxindex_open_1,)
+                auxindex_close_1 = auxtext.find(closing_search_1, auxindex_open_1)
+
+                #If it has found the opening and the closing do something else continue
+                if((auxindex_open_2 != -1) and (auxindex_close_1 != -1)):
+
+                    #it's not the one I am searching so write until the close
+                    if(auxindex_close_1 < auxindex_open_2):
+                        #split the data to free memory
+                        [textwrite,auxtext] = auxtext.split(closing_search_1,1)
+                        textwrite = textwrite + closing_search_1
+                        writef.write(textwrite)
+                        textwrite = ""
+                    else:
+                        auxindex_open_3 = auxtext.find(opening_search_3,auxindex_open_2)
+                        auxindex_close_2 = auxtext.find(closing_search_2,auxindex_open_1)
+
+                        #If it has found the opening and the closing do something, else continue
+                        if((auxindex_open_3 != -1) and (auxindex_close_2 != -1)):
+
+                            #it's not the one I am searching so write until the close
+                            if(auxindex_close_2 < auxindex_open_3):
+                                #split the data to free memory
+                                [textwrite,auxtext] = auxtext.split(closing_search_2,1)
+                                textwrite = textwrite + closing_search_2
+                                writef.write(textwrite)
+                                textwrite = ""
+                            else:
+                                auxindex_open_4 = auxtext.find(opening_search_4, auxindex_open_3)
+                                auxindex_close_3 = auxtext.find(closing_search_3, auxindex_open_2)
+
+                                #If it has found the opening and the closing do something, else continue
+                                if((auxindex_open_4 != -1) and (auxindex_close_3 != -1)):
+                                    #it's not the one I am searching so write until the close
+                                    if(auxindex_close_3 < auxindex_open_4):
+                                        #split the data to free memory
+                                        [textwrite,auxtext] = auxtext.split(closing_search_3,1)
+                                        textwrite = textwrite + closing_search_3
+                                        writef.write(textwrite)
+                                        textwrite = ""
+                                    else:
+                                        auxindex_close_4 = auxtext.find(closing_search_4, auxindex_open_4)
+                                        #If it has found the opening and the closing do something, else continue
+                                        if((auxindex_open_4 != -1) and (auxindex_close_4 != -1)):
+                                            [textwrite, auxtext] = auxtext.split(opening_search_4,1)
+                                            textwrite = textwrite + opening_search_4
+                                            writef.write(textwrite)
+                                            writef.write(writevalue)
+                                            [omit,textwrite] = auxtext.split(closing_search_4,1)
+                                            textwrite = closing_search_4 + textwrite
+                                            writef.write(textwrite)
+                                            #clean to read from that point
+                                            auxtext = ""
+
 
 
 # ------------------------------------------------------------------------------------------------------

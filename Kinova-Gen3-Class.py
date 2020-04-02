@@ -74,10 +74,34 @@ if __name__ == '__main__':
     p.connect(p.GUI)
     p.setGravity(0.0, 0.0, -9.81)
 
+
+
     # create robot instance with default configuration
     robot = KinovaGen3()
     print("Class created")
     robot.move_home()
+
+    #Modify all the links mass , don't specify the name
+
+    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
+    print(file_2_write)
+    if (file_2_write != "error"):
+        robot.modify_urdf(robot.robot_urdf,file_2_write,"mass",2.0)
+
+    #Modify only one link mass , specify the name
+
+    info = p.getJointInfo(robot.robot_id,robot.last_robot_joint_index)
+    LastLinkName = info[12]
+    print(LastLinkName[1])
+
+    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
+    print(file_2_write)
+    if (file_2_write != "error"):
+        robot.modify_urdf(robot.robot_urdf,file_2_write,"mass",2.0,\
+        link_or_joint_name=LastLinkName)
+    print("created")
+    """
+    Test of functions
 
     joint_angle_target = list(robot.home_angles)
     time.sleep(2)
@@ -149,6 +173,8 @@ if __name__ == '__main__':
     [actual_position,actual_orientation_q] = list(robot.get_actual_tcp_pose())
     print(actual_position + p.getEulerFromQuaternion(actual_orientation_q))
     time.sleep(10)
+    """
+
 
 
 
