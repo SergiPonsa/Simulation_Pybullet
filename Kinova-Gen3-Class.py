@@ -83,34 +83,39 @@ if __name__ == '__main__':
 
     #Modify all the links mass , don't specify the name
 
-    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
-    print(file_2_write)
-    if (file_2_write != "error"):
-        robot.modify_urdf(robot.robot_urdf,file_2_write,"mass",2.0)
+    file_2_write_ex1 = robot.create_empty_file(robot.robot_urdf)
+    print(file_2_write_ex1)
+    if (file_2_write_ex1 != "error"):
+        robot.modify_urdf(robot.robot_urdf,file_2_write_ex1,"mass",2.0)
+
 
     #Modify only one link mass , specify the name
-
+    # The first one it's saved to a external file, to keep the original
     info = p.getJointInfo(robot.robot_id,robot.last_robot_joint_index)
     LastLinkName = str(info[12], "utf-8")
     print(LastLinkName)
 
-    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
-    print(file_2_write)
-    if (file_2_write != "error"):
-        robot.modify_urdf(robot.robot_urdf,file_2_write,"mass",2.0,\
+    file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
+    print(file_2_write_ex2)
+    if (file_2_write_ex2 != "error"):
+        robot.modify_urdf(robot.robot_urdf,file_2_write_ex2,"mass",2.0,\
         link_or_joint_name=LastLinkName)
     print("created")
 
-    info = p.getJointInfo(robot.robot_id,robot.joints[robot.robot_control_joints[0]].id)
-    LinkName = str(info[12], "utf-8")
-    print(LinkName)
+    # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
+    file_dummy = robot.create_empty_file(robot.robot_urdf)
+    for control_joint_name in robot.robot_control_joints :
 
-    file_2_read = file_2_write
-    file_2_write = robot.create_file_to_modify(robot.robot_urdf)
+        #Get the link name
+        info = p.getJointInfo(robot.robot_id,robot.joints[control_joint_name].id)
+        LinkName = str(info[12], "utf-8")
+        print(LinkName)
 
-    print(file_2_write)
-    if (file_2_write != "error"):
-        robot.modify_urdf(file_2_read,file_2_write,"mass",2.0,\
+        #copy the previous to dummy
+        robot.Copy_file(file_2_write_ex2,file_dummy)
+        file_2_read = file_dummy
+
+        robot.modify_urdf(file_2_read,file_2_write_ex2,"mass",2.0,\
         link_or_joint_name=LinkName)
     print("created")
 

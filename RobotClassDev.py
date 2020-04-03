@@ -441,7 +441,7 @@ class Robot():
             time.sleep(1.0 / 240.0)
 
 
-    def create_file_to_modify(self,path):
+    def create_empty_file(self,path):
         "Create a new file where you can write without losing data"
         aux_path = path [:-5] #copy all except the .urdf
         for  i in range(256):
@@ -454,6 +454,13 @@ class Robot():
             except:
                 print(aux_path_2 + " already exist" )
         return "error"
+
+    def Copy_file(self,path2read,path2copy):
+        readf = open(path2read,"r")
+        writef = open(path2copy,"w")
+        for line in readf:
+            writef.write(line)
+
 
     def modify_elements_joint(self):
         "provide the options to modify the joints"
@@ -585,7 +592,7 @@ class Robot():
         for line in readf :
             auxtext = auxtext + line
             if(opening_search_1 in auxtext):
-                print("I find the first")
+                # print("I find the first")
                 auxindex_open_1 = auxtext.find(opening_search_1)
                 auxindex_open_2 = auxtext.find(opening_search_2, auxindex_open_1,)
                 auxindex_close_1 = auxtext.find(closing_search_1, auxindex_open_1)
@@ -642,10 +649,10 @@ class Robot():
                                             writef.write(textwrite)
                                             #clean to read from that point
                                             auxtext = ""
+        writef.write(auxtext)
         readf.close()
         writef.close()
         print("Files closed")
-        time.sleep(10)
 
 
 
