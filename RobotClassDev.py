@@ -211,7 +211,7 @@ class Robot():
                                                     targetPosition = joint_param_value[i] * self.robot_mimic_multiplier[i],
                                                     force = follow_joint.max_force * desired_force_per_one,
                                                     maxVelocity = follow_joint.max_velocity * desired_vel_per_one,
-                                                    positionGain = 1,
+                                                    positionGain = 2,
                                                     velocityGain = 1)
 
             #If we apply the control without care if another action modify it's trajectory and apply only 1 simulation
@@ -219,20 +219,29 @@ class Robot():
                 # make step simulation
                 self.step_simulation()
                 # check position reached
-                for i in range(len(self.robot_control_joints)):
-                    jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
-                    if i == 0:
-                        jointstatepos = [jointstate_aux[0]]
-                        jointdiff = abs(jointstatepos[i] - joint_param_value[i])
-                    else:
-                        jointstatepos.append(jointstate_aux[0])
-                        jointdiff = jointdiff + abs(jointstatepos[i] - joint_param_value[i])
+                jointdiff = self.get_angle_diference(joint_param_value,data_by_joint = False)
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
                 if (counter > counter_max):
                     print("maximum iterations reach")
             else:
                 reached = True
+    def get_angle_diference(self,control_joints_target,data_by_joint = False):
+        difference_by_joint = []
+        for i in range(len(self.robot_control_joints)):
+            jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
+            if i == 0:
+                jointstatepos = [jointstate_aux[0]]
+                jointdiff = abs(jointstatepos[i] - control_joints_target[i])
+            else:
+                jointstatepos.append(jointstate_aux[0])
+                jointdiff = jointdiff + abs(jointstatepos[i] - control_joints_target[i])
+
+            difference_by_joint.append(abs(jointstatepos[i] - control_joints_target[i]))
+        if(data_by_joint):
+            return difference_by_joint
+        else:
+            return jointdiff
 
     def get_actual_control_joints_angle(self):
         for i in range(len(self.robot_control_joints)):
@@ -269,7 +278,7 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+    def move_cartesian(self, pose, max_iterations = 10**8 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
 
         if (nullspace == None):
             nullspace = self.nullspace
@@ -342,6 +351,22 @@ class Robot():
             print("\n", "world to tcp end position", world_tcp_end_pose[0],
                      p.getEulerFromQuaternion(world_tcp_end_pose[1]))
         return world_tcp_end_pose
+
+    def move_cartesian_offset(self,desired_position_offset,desired_orientation_e_offset,max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+        [actual_position,actual_orientation_q] = self.get_actual_tcp_pose()
+        actual_orientation_e = p.getEulerFromQuaternion(actual_orientation_q)
+
+        move_position = [actual_position[0]+desired_position_offset[0],actual_position[1]+desired_position_offset[1],\
+                        actual_position[2]+desired_position_offset[2]]
+        move_orientation_e = [actual_orientation_e[0]+desired_orientation_e_offset[0],\
+                            actual_orientation_e[1]+desired_orientation_e_offset[1],\
+                            actual_orientation_e[2]+desired_orientation_e_offset[2]]
+        move_orientation_q = p.getQuaternionFromEuler(move_orientation_e)
+
+        self.move_cartesian([move_position,move_orientation_q],max_iterations=max_iterations\
+                            ,nullspace=nullspace,desired_force_per_one=desired_force_per_one\
+                            ,desired_vel_per_one=desired_vel_per_one,wait=wait\
+                            ,counter_max=counter_max,error_threshold=error_threshold)
 
     def get_robot_base_pose_from_world_pose(world_position,world_orientation_q):
 
@@ -460,6 +485,8 @@ class Robot():
         writef = open(path2copy,"w")
         for line in readf:
             writef.write(line)
+        readf.close()
+        writef.close()
 
 
     def modify_elements_joint(self):
@@ -511,6 +538,8 @@ class Robot():
             print("Doesn't exist the field you are asking for, check modify_elements_link and modify_elements_joint ")
             return
 
+        print("\n"+opening_search_2+"\n")
+
         #3rd element to search
         if (element_to_modify in inertial_elements):
             opening_search_3 = "<inertial"
@@ -541,15 +570,15 @@ class Robot():
                 return
             else:
                 writevalue = " = \"" + str(value[0]) + "\" "  + \
-                        " = \"" + str(value[1]) + "\" "  + \
-                        " = \"" + str(value[2]) + "\" "  + \
-                        " = \"" + str(value[3]) + "\" "  + \
-                        " = \"" + str(value[4]) + "\" "  + \
-                        " = \"" + str(value[5]) + "\" "
+                        "ixy = \"" + str(value[1]) + "\" "  + \
+                        "ixz = \"" + str(value[2]) + "\" "  + \
+                        "iyy = \"" + str(value[3]) + "\" "  + \
+                        "iyz = \"" + str(value[4]) + "\" "  + \
+                        "izz = \"" + str(value[5]) + "\" "
         elif(element_to_modify == "damping"):
             opening_search_4 = "damping"
-            closing_search_4 = "\""
-            writevalue = " = \"" + str(value)
+            closing_search_4 = "friction"
+            writevalue = " = \"" + str(value)+"\" "
 
         elif(element_to_modify == "friction"):
             opening_search_4 = "friction"
@@ -558,23 +587,23 @@ class Robot():
 
         elif(element_to_modify == "lower"):
             opening_search_4 = "lower"
-            closing_search_4 = "\""
-            writevalue = " = \"" + str(value)
+            closing_search_4 = "upper"
+            writevalue = " = \"" + str(value)+"\" "
 
         elif(element_to_modify == "upper"):
             opening_search_4 = "upper"
-            closing_search_4 = "\""
-            writevalue = " = \"" + str(value)
+            closing_search_4 = "effort"
+            writevalue = " = \"" + str(value)+"\" "
 
         elif(element_to_modify == "effort"):
             opening_search_4 = "effort"
-            closing_search_4 = "\""
-            writevalue = " = \"" + str(value)
+            closing_search_4 = "velocity"
+            writevalue = " = \"" + str(value) + "\" "
 
         elif(element_to_modify == "velocity"):
             opening_search_4 = "velocity"
             closing_search_4 = "/>"
-            writevalue = " = \"" + str(value)
+            writevalue = " = \"" + str(value)+ "\" "
 
         else:
             print("An error happend check this function")
@@ -592,24 +621,24 @@ class Robot():
         for line in readf :
             auxtext = auxtext + line
             if(opening_search_1 in auxtext):
-                # print("I find the first")
+                #print("I find the first")
                 auxindex_open_1 = auxtext.find(opening_search_1)
-                auxindex_open_2 = auxtext.find(opening_search_2, auxindex_open_1,)
-                auxindex_close_1 = auxtext.find(closing_search_1, auxindex_open_1)
+                auxindex_open_2 = auxtext.find(opening_search_2,auxindex_open_1 )
+                auxindex_close_1 = auxtext.find(closing_search_1,auxindex_open_2 )
 
                 #If it has found the opening and the closing do something else continue
                 if((auxindex_open_2 != -1) and (auxindex_close_1 != -1)):
-                    # print("I find the second")
+                    #print("I find the second")
                     #it's not the one I am searching so write until the close
                     if(auxindex_close_1 < auxindex_open_2):
                         #split the data to free memory
-                        [textwrite,auxtext] = auxtext.split(closing_search_1,1)
-                        textwrite = textwrite + closing_search_1
+                        textwrite = auxtext[:auxindex_close_1]
+                        auxtext = auxtext[auxindex_close_1:]
                         writef.write(textwrite)
                         textwrite = ""
                     else:
                         auxindex_open_3 = auxtext.find(opening_search_3,auxindex_open_2)
-                        auxindex_close_2 = auxtext.find(closing_search_2,auxindex_open_1)
+                        auxindex_close_2 = auxtext.find(closing_search_2,auxindex_open_3)
 
                         #If it has found the opening and the closing do something, else continue
                         if((auxindex_open_3 != -1) and (auxindex_close_2 != -1)):
@@ -617,35 +646,39 @@ class Robot():
                             #it's not the one I am searching so write until the close
                             if(auxindex_close_2 < auxindex_open_3):
                                 #split the data to free memory
-                                [textwrite,auxtext] = auxtext.split(closing_search_2,1)
-                                textwrite = textwrite + closing_search_2
+                                textwrite = auxtext[:auxindex_close_2]
+                                auxtext = auxtext[auxindex_close_2:]
                                 writef.write(textwrite)
                                 textwrite = ""
                             else:
-                                auxindex_open_4 = auxtext.find(opening_search_4, auxindex_open_3)
-                                auxindex_close_3 = auxtext.find(closing_search_3, auxindex_open_2)
+                                auxindex_open_4 = auxtext.find(opening_search_4,auxindex_open_3)
+                                auxindex_close_3 = auxtext.find(closing_search_3,auxindex_open_4)
 
                                 #If it has found the opening and the closing do something, else continue
                                 if((auxindex_open_4 != -1) and (auxindex_close_3 != -1)):
-                                    # print("I find the fourth")
+                                    print("I find the fourth")
                                     #it's not the one I am searching so write until the close
                                     if(auxindex_close_3 < auxindex_open_4):
                                         #split the data to free memory
-                                        [textwrite,auxtext] = auxtext.split(closing_search_3,1)
-                                        textwrite = textwrite + closing_search_3
+                                        textwrite = auxtext[:auxindex_close_3]
+                                        auxtext = auxtext[auxindex_close_3:]
                                         writef.write(textwrite)
                                         textwrite = ""
                                     else:
-                                        auxindex_close_4 = auxtext.find(closing_search_4, auxindex_open_4)
+                                        auxindex_close_4 = auxtext.find(closing_search_4,auxindex_open_4)
                                         #If it has found the opening and the closing do something, else continue
                                         if((auxindex_open_4 != -1) and (auxindex_close_4 != -1)):
                                             print("I find all")
-                                            [textwrite, auxtext] = auxtext.split(opening_search_4,1)
+                                            textwrite = auxtext[:auxindex_open_4]
                                             textwrite = textwrite + opening_search_4
+                                            #print(textwrite)
                                             writef.write(textwrite)
+
+                                            #print(writevalue)
                                             writef.write(writevalue)
-                                            [omit,textwrite] = auxtext.split(closing_search_4,1)
-                                            textwrite = closing_search_4 + textwrite
+
+                                            textwrite = auxtext[auxindex_close_4:]
+                                            #print(textwrite)
                                             writef.write(textwrite)
                                             #clean to read from that point
                                             auxtext = ""

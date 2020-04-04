@@ -100,6 +100,7 @@
       link="Shoulder_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       effort="39"
       velocity="0.8727" />
@@ -160,6 +161,7 @@
       link="HalfArm1_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       lower="-2.2"
       upper="2.2"
@@ -222,6 +224,7 @@
       link="HalfArm2_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       effort="39"
       velocity="0.8727" />
@@ -282,6 +285,7 @@
       link="ForeArm_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       lower="-2.5656"
       upper="2.5656"
@@ -344,6 +348,7 @@
       link="SphericalWrist1_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       effort="9"
       velocity="0.8727" />
@@ -404,6 +409,7 @@
       link="SphericalWrist2_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       lower="-2.05"
       upper="2.05"
@@ -466,6 +472,7 @@
       link="Bracelet_Link" />
     <axis
       xyz="0 0 1" />
+    <dynamics damping ="0.0" friction ="0.0"/>
     <limit
       effort="9"
       velocity="0.8727" />
@@ -503,6 +510,7 @@
       link="EndEffector_Link" />
     <axis
       xyz="0 0 0" />
+    <dynamics damping ="0.0" friction ="0.0"/>
   </joint>
 
   <!--################################################
