@@ -154,9 +154,11 @@ if __name__ == '__main__':
     # The first one it's saved to a external file, to keep the original
     file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
     robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
-    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["mass","friction"],\
-                                                                                        [2.0,1.0,2.0,1.0,2.0,1.0,3.0, \
-                                                                                        1.0,1.0,1.0,1.0,1.0,1.0,1.0] )
+    ####################################################################
+    #Mass test
+    mass_v=1.0
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["mass"],\
+                                                                                        [mass_v,mass_v,mass_v,mass_v,mass_v,mass_v,mass_v] )
     #Disconnect and connect again
     p.disconnect()
     time.sleep(2.0)
@@ -166,7 +168,113 @@ if __name__ == '__main__':
     robot = KinovaGen3(robot_urdf=file_2_write_ex2)
 
     robot.move_home()
-    robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    robot.Write_modification_test_offset(distance,"mass",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+
+    ####################################################################
+    #Inertia test
+    inertia_v = 1.0
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["inertia"],\
+                                                                                        [[inertia_v,0.0,0.0,inertia_v,0.0,inertia_v]*7])
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"inertia",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #Damping test
+    damping_v = 1.0
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["damping"],\
+                                                                                        [damping_v,damping_v,damping_v,damping_v,damping_v,damping_v,damping_v] )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"damping",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #friction test
+    friction_v = 1.0
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["friction"],\
+                                                                                        [friction_v,friction_v,friction_v,friction_v,friction_v,friction_v,friction_v]  )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"friction",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #lower test
+    lower_v=1.57
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["lower"],\
+                                                                                        [lower_v,lower_v,lower_v,lower_v,lower_v,lower_v,lower_v]  )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"lower",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #upper test
+    upper_v = 1.57
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["upper"],\
+                                                                                        [upper_v,upper_v,upper_v,upper_v,upper_v,upper_v,upper_v]  )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"upper",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #effort test
+    effort_v = 39.0
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["effort"],\
+                                                                                        [effort_v,effort_v,effort_v,effort_v,effort_v,effort_v,effort_v]  )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"effort",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    ###############################################
+    #velocity test
+    velocity_v = 0.8727
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["velocity"],\
+                                                                                        [velocity_v,velocity_v,velocity_v,velocity_v,velocity_v,velocity_v,velocity_v]  )
+    #Disconnect and connect again
+    p.disconnect()
+    time.sleep(2.0)
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+
+    robot.move_home()
+    robot.Write_modification_test_offset(distance,"velocity",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
     ###############################################
 
     p.disconnect()

@@ -53,7 +53,7 @@
         xyz="-2.3E-05 -0.010364 -0.07336"
         rpy="0 0 0" />
       <mass
-        value =  "2.0" />
+        value =  "1.0" />
       <inertia
         ixx="0.00457"
         ixy="1E-06"
@@ -100,7 +100,7 @@
       link="Shoulder_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
       effort="39"
       velocity="0.8727" />
@@ -114,7 +114,7 @@
         xyz="-4.4E-05 -0.09958 -0.013278"
         rpy="0 0 0" />
       <mass
-        value =  "2.0" />
+        value =  "1.0" />
       <inertia
         ixx="0.011088"
         ixy="5E-06"
@@ -161,10 +161,9 @@
       link="HalfArm1_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
-      lower="-2.2"
-      upper="2.2"
+      lower = "1.57" upper="2.2"
       effort="39"
       velocity="0.8727" />
   </joint>
@@ -177,7 +176,7 @@
         xyz="-4.4E-05 -0.006641 -0.117892"
         rpy="0 0 0" />
       <mass
-        value =  "2.0" />
+        value =  "1.0" />
       <inertia
         ixx="0.010932"
         ixy="0"
@@ -224,7 +223,7 @@
       link="HalfArm2_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
       effort="39"
       velocity="0.8727" />
@@ -238,7 +237,7 @@
         xyz="-1.8E-05 -0.075478 -0.015006"
         rpy="0 0 0" />
       <mass
-        value =  "3.0" />
+        value =  "1.0" />
       <inertia
         ixx="0.008147"
         ixy="-1E-06"
@@ -285,10 +284,9 @@
       link="ForeArm_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
-      lower="-2.5656"
-      upper="2.5656"
+      lower = "1.57" upper="2.5656"
       effort="39"
       velocity="0.8727" />
   </joint>
@@ -348,7 +346,7 @@
       link="SphericalWrist1_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
       effort="9"
       velocity="0.8727" />
@@ -409,10 +407,9 @@
       link="SphericalWrist2_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction = "1.0" />
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
-      lower="-2.05"
-      upper="2.05"
+      lower = "1.57" upper="2.05"
       effort="9"
       velocity="0.8727" />
   </joint>
@@ -472,7 +469,7 @@
       link="Bracelet_Link" />
     <axis
       xyz="0 0 1" />
-    <dynamics damping ="0.0" friction ="0.0"/>
+    <dynamics damping = "1.0" friction = "1.0" />
     <limit
       effort="9"
       velocity="0.8727" />

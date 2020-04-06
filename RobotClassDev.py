@@ -577,7 +577,7 @@ class Robot():
         elif(element_to_modify == "inertia"):
             opening_search_4 = "ixx"
             closing_search_4 = "/>"
-
+            print(value)
             if(len(value) != 6):
                 print("The given inertia is wrong please insert a list of the 6 elements of inertia")
                 print("ixx, ixy, ixz, iyy, iyz, izz")
@@ -754,7 +754,7 @@ class Robot():
                     else:
                         element_value_list = []
 
-                        for i in range( dict_expected_values(element) ):
+                        for i in range( dict_expected_values[element] ):
                             element_value_list = value_list.pop(0)
                         self.modify_urdf(path2read,path2write,element,element_value_list,\
                                         link_or_joint_name=LinkName)
