@@ -243,6 +243,14 @@ class Robot():
         else:
             return jointdiff
 
+    def get_pose_diference(self,actual_position,actual_orientation_e,desired_position,desired_orientation_e):
+        difference = []
+        for i,j in zip(actual_position, desired_position):
+            difference.append(i-j)
+        for i,j in zip(actual_orientation_e, desired_orientation_e):
+            difference.append(i-j)
+        return difference
+
     def get_actual_control_joints_angle(self):
         for i in range(len(self.robot_control_joints)):
             joint_state_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
@@ -352,16 +360,22 @@ class Robot():
                      p.getEulerFromQuaternion(world_tcp_end_pose[1]))
         return world_tcp_end_pose
 
-    def move_cartesian_offset(self,desired_position_offset,desired_orientation_e_offset,max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+    def get_cartesian_offset_target_pose(self,desired_position_offset,desired_orientation_e_offset):
+
         [actual_position,actual_orientation_q] = self.get_actual_tcp_pose()
         actual_orientation_e = p.getEulerFromQuaternion(actual_orientation_q)
-
         move_position = [actual_position[0]+desired_position_offset[0],actual_position[1]+desired_position_offset[1],\
                         actual_position[2]+desired_position_offset[2]]
         move_orientation_e = [actual_orientation_e[0]+desired_orientation_e_offset[0],\
                             actual_orientation_e[1]+desired_orientation_e_offset[1],\
                             actual_orientation_e[2]+desired_orientation_e_offset[2]]
         move_orientation_q = p.getQuaternionFromEuler(move_orientation_e)
+
+        return [move_position,move_orientation_q]
+
+    def move_cartesian_offset(self,desired_position_offset,desired_orientation_e_offset,max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+
+        [move_position,move_orientation_q] = self.get_cartesian_offset_target_pose(desired_position_offset,desired_orientation_e_offset)
 
         self.move_cartesian([move_position,move_orientation_q],max_iterations=max_iterations\
                             ,nullspace=nullspace,desired_force_per_one=desired_force_per_one\
@@ -610,13 +624,20 @@ class Robot():
 
         #Everything it's defined
 
-        #Process of modification
+        #DEfinition of files to use
+        if(path2read == path2write):
+            #Create a dummy file
+            dummyf = open("dummy_urdf.urdf","w")
+            dummyf.close()
+            self.Copy_file(path2read,"dummy_urdf.urdf")
+            path2read = "dummy_urdf.urdf"
+
         readf = open(path2read, "r")
-        # for line in readf :
-        #     print(line)
         writef = open(path2write, "w")
+
         print ("Overwriting " + path2write + " Reading " + path2read )
 
+        #Process of modification
         auxtext = ""
         for line in readf :
             auxtext = auxtext + line
@@ -686,6 +707,58 @@ class Robot():
         readf.close()
         writef.close()
         print("Files closed")
+
+
+    def modify_urdf_list(self,path2read,path2write,joints_names_2modify_list,element_to_modify_list, value_list ):
+
+
+
+        #Check the elements lenght it's right before do nothing
+        dict_expected_values = {"mass":1,\
+                                "inertia":6,\
+                                "damping":1,\
+                                "friction":1,\
+                                "lower":1,\
+                                "upper":1,\
+                                "effort":1,\
+                                "velocity":1}
+        expected_values = 0
+
+        for i in element_to_modify_list:
+            expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
+
+        if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
+            print("Expected " + str(expected_values) \
+            + "and given " + str(len(value_list)) + "values" )
+        else:
+            #The main program once it's checked
+
+            # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
+            for joint_name in joints_names_2modify_list :
+
+                for element in element_to_modify_list:
+
+                    #Get the link name or joint name
+                    if(element in self.modify_elements_link()):
+                        info = p.getJointInfo(self.robot_id,self.joints[joint_name].id)
+                        LinkName = str(info[12], "utf-8")
+                    else:
+                        LinkName = joint_name
+
+                    print(LinkName)
+
+                    if (dict_expected_values[element] ==1):
+                        element_value = value_list.pop(0)
+                        self.modify_urdf(path2read,path2write,element,element_value,\
+                                        link_or_joint_name=LinkName)
+                    else:
+                        element_value_list = []
+
+                        for i in range( dict_expected_values(element) ):
+                            element_value_list = value_list.pop(0)
+                        self.modify_urdf(path2read,path2write,element,element_value_list,\
+                                        link_or_joint_name=LinkName)
+            print("created")
 
 
 

@@ -67,6 +67,59 @@ class KinovaGen3(Robot):
         tcp_offset_pos = tcp_offset_pos,
         tcp_offset_orien_e = tcp_offset_orien_e)
 
+    def Write_modification_test_offset(self,distance_to_test,element_to_modify,element_value_to_modify,counter_test = 10**5,title="",time_home = 0,time_between=0.0):
+
+        #create file with the results
+        record_experimet_f = open(title+"exp_"+str(element_to_modify,)+"_"+str(element_value_to_modify) +\
+                                "_steps_"+str(counter_test)+".txt","w")
+
+        #Initial position
+        robot.move_home()
+
+
+        dirrection = ["x","y","z"]
+        sign = [1,-1]
+        dict_pos ={"x":0,\
+                    "y":1,\
+                    "z":2}
+        dict_sig ={-1:"Negative",\
+                    1:"Positive"}
+
+        record_experimet_f.write(title)
+        record_experimet_f.write("\n"*2)
+        for i in dirrection:
+            for j in sign:
+
+                record_experimet_f.write(dict_sig[j]+" "+ i +" "+ str(distance_to_test)+" cm \n")
+                offset = [0,0,0]
+                print(offset)
+                offset[dict_pos[i]] = j * distance_to_test
+                print(offset)
+                [target_pos,target_orien_q] = robot.get_cartesian_offset_target_pose(offset,[0,0,0])
+
+                robot.move_cartesian_offset(offset,[0,0,0],counter_max = counter_test)
+
+                [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
+
+                difference = robot.get_pose_diference(actual_position_test,p.getEulerFromQuaternion(actual_orientation_q_test),\
+                                        target_pos,p.getEulerFromQuaternion(target_orien_q))
+
+                record_experimet_f.write( "Target position"+ "\n" )
+                record_experimet_f.write( str( target_pos ) + "\n" )
+                record_experimet_f.write( "Final position"+ "\n" )
+                record_experimet_f.write( str( actual_position_test ) + "\n" )
+                record_experimet_f.write( "Difference with the target position"+ "\n" )
+                record_experimet_f.write( str( difference ) + "\n" )
+                record_experimet_f.write( "Difference with the target angles" + "\n" )
+                record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
+                record_experimet_f.write("\n" * 2)
+
+                time.sleep(time_home)
+                robot.move_home()
+
+            time.sleep(time_between)
+        record_experimet_f.close()
+
 # ------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
@@ -80,358 +133,42 @@ if __name__ == '__main__':
     robot = KinovaGen3()
     print("Class created")
     robot.move_home()
-
-    #move original robot
-
-
-    [home_position,home_orientation_q] = robot.get_actual_tcp_pose()
-    counter_test = 10**5
+    element_to_modify = ["mass","friction"]
+    element_value_to_modify = [1.0,2.0]
     distance = 0.2
-    time_home = 0.2
-    time_between=0.0
-    element = "friction"
-    element_value = 1.0
 
-    record_experimet_f = open("exp_"+str(element)+"_"+str(element_value)\
-                            +".txt","w")
-
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n Original Robot with"+str(counter_test)+" steps \n")
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n"*2)
-    #Initial position
-
-    #In x
-    record_experimet_f.write("Positive x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([-distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In y
-    record_experimet_f.write("Positive y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,-distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In z
-    record_experimet_f.write("Positive z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,-distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
+    robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 10**5,title="Original Robot",time_home = 2.0,time_between=1.0)
+    robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 64,title="Original Robot",time_home = 2.0,time_between=1.0)
 
     ###############################################
-
-    counter_test = 64
-
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n Original Robot with "+str(counter_test)+" steps \n")
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n"*2)
-    #Initial position
-
-    #In x
-    record_experimet_f.write("Positive x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([-distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In y
-    record_experimet_f.write("Positive y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,-distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In z
-    record_experimet_f.write("Positive z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,-distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-
     #Modify all the links mass , don't specify the name
 
     file_2_write_ex1 = robot.create_empty_file(robot.robot_urdf)
     print(file_2_write_ex1)
     if (file_2_write_ex1 != "error"):
-        robot.modify_urdf(robot.robot_urdf,file_2_write_ex1,element,element_value)
-
+        robot.modify_urdf(robot.robot_urdf,file_2_write_ex1,"mass",3.0)
+    print("Created")
+    time.sleep(10.0)
 
     #Modify only one link mass , specify the name
     # The first one it's saved to a external file, to keep the original
-    if(element in robot.modify_elements_link()):
-        info = p.getJointInfo(robot.robot_id,robot.last_robot_joint_index)
-        LastLinkName = str(info[12], "utf-8")
-        print(LastLinkName)
-
     file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
-
-
-    print(file_2_write_ex2)
-    if (file_2_write_ex2 != "error"):
-        if(element in robot.modify_elements_link()):
-            robot.modify_urdf(robot.robot_urdf,file_2_write_ex2,element,element_value,\
-            link_or_joint_name=LastLinkName)
-        else:
-            robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
-    print("created")
-
-    # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
-    file_dummy = robot.create_empty_file(robot.robot_urdf)
-    for control_joint_name in robot.robot_control_joints :
-
-        #Get the link name or joint name
-        if(element in robot.modify_elements_link()):
-            info = p.getJointInfo(robot.robot_id,robot.joints[control_joint_name].id)
-            LinkName = str(info[12], "utf-8")
-        else:
-            LinkName = control_joint_name
-
-        print(LinkName)
-
-        #copy the previous to dummy
-        robot.Copy_file(file_2_write_ex2,file_dummy)
-
-        file_2_read = file_dummy
-
-        robot.modify_urdf(file_2_read,file_2_write_ex2,element,element_value,\
-        link_or_joint_name=LinkName)
-    print("created")
-
+    robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
+    robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["mass","friction"],\
+                                                                                        [2.0,1.0,2.0,1.0,2.0,1.0,3.0, \
+                                                                                        1.0,1.0,1.0,1.0,1.0,1.0,1.0] )
     #Disconnect and connect again
     p.disconnect()
     time.sleep(2.0)
     p.connect(p.GUI)
     p.setGravity(0.0, 0.0, -9.81)
 
-    robot = KinovaGen3(robot_urdf="models/urdf/JACO3_URDF_V11_1.urdf")
+    robot = KinovaGen3(robot_urdf=file_2_write_ex2)
 
     robot.move_home()
+    robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
     ###############################################
 
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n  Robot Modified with "+str(element)+" " \
-                            +str(element_value)+" "+str(counter_test)+" steps \n")
-    record_experimet_f.write("#"*20)
-    record_experimet_f.write("\n"*2)
-    #Initial position
-
-    #In x
-    record_experimet_f.write("Positive x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative x "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([-distance,0,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In y
-    record_experimet_f.write("Positive y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative y "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,-distance,0],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    #In z
-    record_experimet_f.write("Positive z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    record_experimet_f.write("Negative z "+ str(distance)+" cm \n")
-    robot.move_cartesian_offset([0,0,-distance],[0,0,0],counter_max = counter_test)
-    [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
-    diference = []
-    for i,j in zip(actual_position_test, home_position):
-        diference.append(i-j)
-    record_experimet_f.write( str( diference ) + "\n" )
-    record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
-    record_experimet_f.write("\n"*2)
-
-    time.sleep(time_home)
-    robot.move_home()
-
-    time.sleep(time_between)
-
-    record_experimet_f.close()
     p.disconnect()
 
 
