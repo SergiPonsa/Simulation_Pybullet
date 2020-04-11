@@ -6,7 +6,7 @@
 
 import os
 import time
-import pdb
+
 import math
 import numpy as np
 import pybullet as p
@@ -70,7 +70,7 @@ class KinovaGen3(Robot):
     def Write_modification_test_offset(self,distance_to_test,element_to_modify,element_value_to_modify,counter_test = 10**5,title="",time_home = 0,time_between=0.0):
 
         #create file with the results
-        record_experimet_f = open(title+"exp_"+str(element_to_modify,)+"_"+str(element_value_to_modify) +\
+        record_experimet_f = open("Experiments/"+title+"exp_"+str(element_to_modify,)+"_"+str(element_value_to_modify) +\
                                 "_steps_"+str(counter_test)+".txt","w")
 
         #Initial position
@@ -154,9 +154,10 @@ if __name__ == '__main__':
     # The first one it's saved to a external file, to keep the original
     file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
     robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
+
     ####################################################################
     #Mass test
-    mass_v=1.0
+    mass_v=2.0
     robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["mass"],\
                                                                                         [mass_v,mass_v,mass_v,mass_v,mass_v,mass_v,mass_v] )
     #Disconnect and connect again
@@ -168,8 +169,9 @@ if __name__ == '__main__':
     robot = KinovaGen3(robot_urdf=file_2_write_ex2)
 
     robot.move_home()
-    robot.Write_modification_test_offset(distance,"mass",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
+    robot.Write_modification_test_offset(distance,"mass",mass_v,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
 
+    """
     ####################################################################
     #Inertia test
     inertia_v = 1.0
@@ -275,10 +277,10 @@ if __name__ == '__main__':
 
     robot.move_home()
     robot.Write_modification_test_offset(distance,"velocity",1.0,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
-    ###############################################
+    ###import pdb############################################
 
     p.disconnect()
-
+    """
 
 
     """

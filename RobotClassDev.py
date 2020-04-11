@@ -9,11 +9,11 @@
 
 import os
 import time
-import pdb
 import math
 import numpy as np
 import pybullet as p
 import pybullet_data
+from RobotDataBaseClass import RobotDataBase
 from collections import namedtuple
 from attrdict import AttrDict
 
@@ -44,7 +44,9 @@ class Robot():
                 visual_inspection = True,
 
                 tcp_offset_pos = [0.0, 0.0, 0.0],
-                tcp_offset_orien_e = [0.0, 0.0, 0.0]):
+                tcp_offset_orien_e = [0.0, 0.0, 0.0],
+                save_database = True,
+                database_name = "Database"):
 
 
         """Initialization function
@@ -68,7 +70,10 @@ class Robot():
 
         nullspace (boolean): True if we want to find the inverse kinematicscloser to home
         home_position (list of doubles): joint angles in radiants of the initial joint position, I was also useing it to find solution near this configuration
-        visual_inspection=True)
+        visual_inspection (boolean): If it's true it waits the real time to be able to see well the simulation
+
+        save_database (boolean): If it's true create a database every step_simulation
+        database_name (string): Name of the database
 
         """
 
@@ -86,16 +91,20 @@ class Robot():
         self.robot_mimic_multiplier = []
         self.tool_orient_e = tool_orient_e
 
+        self.tcp_offset_pos = tcp_offset_pos
+        self.tcp_offset_orien_e = tcp_offset_orien_e
 
         self.nullspace = nullspace
         self.home_angles = home_angles
         self.visual_inspection = visual_inspection
 
-        self.tcp_offset_pos = tcp_offset_pos
-        self.tcp_offset_orien_e = tcp_offset_orien_e
+        self.save_database = save_database
+        self.database_name = database_name
+        self.database_name_old = None
+        self.database_list = []
 
 
-        self.opening_length = 0.085  # start with the gripper open
+
 
         print(self.robot_urdf)
 
@@ -170,6 +179,57 @@ class Robot():
         self.upper_limit=ul
         self.joint_range=jr
         self.resting_pose=rp
+
+    def move_joints_control_vel(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**4, error_threshold = 10 ** -3):
+        """Class method to control robot position by passing joint angles
+        joint_param_value (list): joint angles velocity aimed to reach
+        desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
+        desired_vel_per_one (double): the value in per 1 of the maximum joint velocity to be applied
+        wait (boolean): if we want to apply the control until the error is greater to the error threshold
+                        or the control it's applied more than counter_max times
+        counter_max: To apply maximum this amount of times the control
+        error_threshold: The acceptable difference between the robot joints and the target joints
+        """
+
+        if (joint_param_value == None):
+            joint_param_value = [0]*len(self.robot_control_joints)
+
+        reached = False
+        counter = 0
+        while not reached:
+
+            counter += 1
+            # Define the control to be applied
+            for i in range(len(self.robot_control_joints)):
+
+                #Control Joints
+                p.setJointMotorControl2(self.robot_id, self.joints[self.robot_control_joints[i]].id,
+                                        p.VELOCITY_CONTROL, targetVelocity = joint_param_value[i],
+                                        force = self.joints[self.robot_control_joints[i]].max_force * desired_force_per_one,)
+                #Mimic joints
+                if (len(self.robot_mimic_joints_name)>0):
+                    for j in range(len(self.robot_mimic_joints_name)):
+                        follow_joint = self.joints[self.robot_mimic_joints_name[j]]
+                        master_joint = self.joints[self.robot_mimic_joints_master[j]]
+
+                        if (master_joint == self.robot_control_joints[i]):
+
+                            p.setJointMotorControl2(self.robot_id, joint.id, p.VELOCITY_CONTROL,
+                                                    targetVelocity = joint_param_value[i] * self.robot_mimic_multiplier[i],
+                                                    force = follow_joint.max_force * desired_force_per_one)
+
+            #If we apply the control without care if another action modify it's trajectory and apply only 1 simulation
+            if wait:
+                # make step simulation
+                self.step_simulation()
+                # check position reached
+                jointdiff = self.get_angle_diference(joint_param_value,data_by_joint = False)
+                if (jointdiff <= error_threshold) or (counter > counter_max):
+                    reached = True
+                if (counter > counter_max):
+                    print("maximum iterations reach")
+            else:
+                reached = True
 
     def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**4, error_threshold = 10 ** -3):
         """Class method to control robot position by passing joint angles
@@ -255,9 +315,9 @@ class Robot():
         for i in range(len(self.robot_control_joints)):
             joint_state_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
             if i == 0:
-                joint_state_pos = [jointstate_aux[0]]  # these indexes are: [0]change joint anglesPosition, [1]Speed, [2]Reactive str, [3]Torque
+                joint_state_pos = [joint_state_aux[0]]  # these indexes are: [0]change joint anglesPosition, [1]Speed, [2]Reactive str, [3]Torque
             else:
-                joint_state_pos.append(jointstate_aux[0])
+                joint_state_pos.append(joint_state_aux[0])
         return joint_state_pos
 
     def get_actual_control_joints_velocity(self):
@@ -479,6 +539,8 @@ class Robot():
         if self.visual_inspection:
             time.sleep(1.0 / 240.0)
 
+        if self.save_database:
+            self.record_database()
 
     def create_empty_file(self,path):
         "Create a new file where you can write without losing data"
@@ -503,15 +565,22 @@ class Robot():
         writef.close()
 
 
-    def modify_elements_joint(self):
+    def get_modify_elements_urdf_joint(self):
         "provide the options to modify the joints"
         joint_mod = ["damping","friction","lower", "upper", "effort", "velocity"]
         return joint_mod
 
-    def modify_elements_link(self):
+    def get_modify_elements_urdf_link(self):
         "provide the options to modify the links"
         link_mod = ["mass","inertia"]
         return link_mod
+    def get_modify_elements_robot(self):
+        elements_changeDynamics = ["mass","lateral_friction","spinning_friction","rolling_friction",\
+                                "restitution","linear_damping","angular_damping","contact_stiffness",\
+                                "contact_damping","friction_anchor","inertia","collision_sphere_radius",\
+                                "collision_distance_threshold","activation_state","damping","anisotropic_friction",\
+                                "velocity","collision_margin"]
+        return elements_changeDynamics
 
     def modify_urdf(self,path2read,path2write,element_to_modify, value , link_or_joint_name = None):
         """
@@ -520,8 +589,8 @@ class Robot():
 
 
         #load the options
-        joint_opt = self.modify_elements_joint()
-        link_opt = self.modify_elements_link()
+        joint_opt = self.get_modify_elements_urdf_joint()
+        link_opt = self.get_modify_elements_urdf_link()
 
         #elements field
         inertial_elements = ["mass","inertia"]
@@ -711,17 +780,16 @@ class Robot():
 
     def modify_urdf_list(self,path2read,path2write,joints_names_2modify_list,element_to_modify_list, value_list ):
 
+        possible_elements_to_modify = self.get_modify_elements_urdf_joint()
+        possible_elements_to_modify.extend(self.get_modify_elements_urdf_link())
 
+        dict_expected_values = {}
+        for possible in possible_elements_to_modify:
+            if (possible != "inertia"):
+                dict_expected_value[possible] = 6
+            else:
+                dict_expected_value[possible] = 1
 
-        #Check the elements lenght it's right before do nothing
-        dict_expected_values = {"mass":1,\
-                                "inertia":6,\
-                                "damping":1,\
-                                "friction":1,\
-                                "lower":1,\
-                                "upper":1,\
-                                "effort":1,\
-                                "velocity":1}
         expected_values = 0
 
         for i in element_to_modify_list:
@@ -729,7 +797,7 @@ class Robot():
 
         if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
             print("Expected " + str(expected_values) \
-            + "and given " + str(len(value_list)) + "values" )
+            + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values" )
         else:
             #The main program once it's checked
 
@@ -739,7 +807,7 @@ class Robot():
                 for element in element_to_modify_list:
 
                     #Get the link name or joint name
-                    if(element in self.modify_elements_link()):
+                    if(element in self.get_modify_elements_urdf_link()):
                         info = p.getJointInfo(self.robot_id,self.joints[joint_name].id)
                         LinkName = str(info[12], "utf-8")
                     else:
@@ -759,6 +827,96 @@ class Robot():
                         self.modify_urdf(path2read,path2write,element,element_value_list,\
                                         link_or_joint_name=LinkName)
             print("created")
+
+    def modify_robot_pybullet(self,joints_names_2modify_list,element_to_modify_list, value_list ):
+
+        possible_elements_to_modify = self.get_modify_elements_robot()
+
+        #Check the elements lenght it's right before do nothing
+
+        dict_expected_values = {}
+        for possible in possible_elements_to_modify:
+            if (possible != "inertia"):
+                dict_expected_value[possible] = 3
+            else:
+                dict_expected_value[possible] = 1
+        for i in element_to_modify_list:
+            expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
+
+        if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
+            print("Expected " + str(expected_values) \
+            + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values" )
+        else:
+
+            # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
+            for joint_name in joints_names_2modify_list :
+
+                for element in element_to_modify_list:
+
+                    if (element in elements_changeDynamics):
+                        if (element == "mass"):
+                            p.changeDynamics(Robot.robot_id, mass = element_to_modify_list.pop())
+                        elif (element == "lateral_friction"):
+                            p.changeDynamics(Robot.robot_id, lateralFriction = element_to_modify_list.pop())
+                        elif (element == "spinning_friction"):
+                            p.changeDynamics(Robot.robot_id, spinningFriction = element_to_modify_list.pop())
+                        elif (element == "rolling_friction"):
+                            p.changeDynamics(Robot.robot_id, rollingFriction = element_to_modify_list.pop())
+                        elif (element == "restitution"):
+                            p.changeDynamics(Robot.robot_id, restitution = element_to_modify_list.pop())
+                        elif (element == "linear_damping"):
+                            p.changeDynamics(Robot.robot_id, linearDamping = element_to_modify_list.pop())
+                        elif (element == "angular_damping"):
+                            p.changeDynamics(Robot.robot_id, angularDamping = element_to_modify_list.pop())
+                        elif (element == "contact_stiffness"):
+                            p.changeDynamics(Robot.robot_id, contactStiffness = element_to_modify_list.pop())
+                        elif (element == "friction_anchor"):
+                            p.changeDynamics(Robot.robot_id, frictionAnchor = element_to_modify_list.pop())
+                        elif (element == "inertia"):
+                            func_value_list = []
+                            for i in range(3):
+                                func_value_list = element_to_modify_list.pop()
+                            p.changeDynamics(Robot.robot_id, localInertiaDiagnoal = func_value_list )
+                        elif (element == "collision_sphere_radius"):
+                            p.changeDynamics(Robot.robot_id, ccdSweptSphereRadiu = element_to_modify_list.pop())
+                        elif (element == "collision_distance_threshold"):
+                            p.changeDynamics(Robot.robot_id, contactProcessingThreshold = element_to_modify_list.pop())
+                        elif (element == "activation_state"):
+                            p.changeDynamics(Robot.robot_id, activationState = element_to_modify_list.pop())
+                        elif (element == "damping"):
+                            p.changeDynamics(Robot.robot_id, jointDamping = element_to_modify_list.pop())
+                        elif (element == "anisotropic_friction"):
+                            p.changeDynamics(Robot.robot_id, anisotropicFriction = element_to_modify_list.pop())
+                        elif (element == "max_velocity"):
+                            p.changeDynamics(Robot.robot_id, maxJointVelocity = element_to_modify_list.pop())
+                        elif (element == "collision_margin"):
+                            p.changeDynamics(Robot.robot_id, collisionMargin = element_to_modify_list.pop())
+                    else:
+                        print("the parameter "+ element+" it's not a parameter of the changeDynamics parameters")
+
+
+    def record_database(self):
+        if(self.database_name != self.database_name_old):
+
+            if(self.database_name_old != None):
+                auxdatabase = self.database
+                self.database_list.append(auxdatabase)
+
+            self.database_name_old = self.database_name
+            self.database = RobotDataBase(self.database_name)
+
+        self.database.joints_angles_rad.append( self.get_actual_control_joints_angle() )
+        self.database.joint_angles_vel_rad.append( self.get_actual_control_joints_velocity() )
+        self.database.joint_torques.append( self.get_actual_control_joints_torque() )
+
+        [tcp_position, tcp_orientation_q] = self.get_actual_tcp_pose()
+        self.database.tcp_position.append(tcp_position)
+        self.database.tcp_orientation_q.append(tcp_orientation_q)
+        self.database.tcp_orientation_e.append(p.getEulerFromQuaternion(tcp_orientation_q))
+        self.database.save_time()
+
+
+
 
 
 
