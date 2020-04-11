@@ -16,13 +16,20 @@ experiment = "Single"
 #experiment = "Double"
 #experiment = "Cube"
 timestep = 1./240.
+force_per_one = 1.0
+
 repeats = 20
+folder = "Experiments"
+title = "velocity_0_001"
 
 if __name__ == '__main__':
     p.connect(p.GUI)
     p.setGravity(0.0, 0.0, -9.81)
     robot = KinovaGen3()
     robot.visual_inspection = False
+
+    robot.modify_robot_pybullet(robot.robot_control_joints,["velocity"],[0.001]*len(robot.robot_control_joints))
+    time.sleep(10.0)
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep)
@@ -33,7 +40,7 @@ if __name__ == '__main__':
         angles_zero = [0.0]*len(robot.robot_control_joints)
         print(angles_zero)
         robot.save_database = False
-        robot.move_joints(joint_param_value = angles_zero, wait=True)
+        robot.move_joints(joint_param_value = angles_zero, wait=True,desired_force_per_one=force_per_one)
         robot.save_database = True
         #time.sleep(10)
         for simStep in range(counter):
@@ -54,7 +61,7 @@ if __name__ == '__main__':
                     velocity_angles.append( PID_List[i].get_velocity(math.degrees(current_angles[i])) /57.32484076 )
 
                 #Apply the controls
-                robot.move_joints_control_vel( joint_param_value = velocity_angles ,wait = False)
+                robot.move_joints_control_vel( joint_param_value = velocity_angles ,wait = False , desired_force_per_one=force_per_one)
 
             robot.step_simulation()
 
@@ -88,7 +95,7 @@ if __name__ == '__main__':
         dataframe_list.append(aux_df)
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    writer = pd.ExcelWriter('all_experiments.xlsx', engine='xlsxwriter')
+    writer = pd.ExcelWriter(folder+"/"+title+"_all_experiments.xlsx", engine='xlsxwriter')
     for count in range ( len(dataframe_list) ):
         #dataframe_list[count].head
         dataframe_list[count].to_excel(writer, sheet_name='Sheet'+str(count))
@@ -117,4 +124,4 @@ if __name__ == '__main__':
 
         avg_df[column_name] = joint_angles_average [:,i]
     avg_df.index = data.time
-    avg_df.to_excel("average.xlsx", sheet_name='Sheet1')
+    avg_df.to_excel(folder+"/"+title+"_average.xlsx", sheet_name='Sheet1')

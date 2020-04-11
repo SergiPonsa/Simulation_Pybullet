@@ -836,10 +836,12 @@ class Robot():
 
         dict_expected_values = {}
         for possible in possible_elements_to_modify:
-            if (possible != "inertia"):
-                dict_expected_value[possible] = 3
+            if (possible == "inertia"):
+                dict_expected_values[possible] = 3
             else:
-                dict_expected_value[possible] = 1
+                dict_expected_values[possible] = 1
+
+        expected_values = 0
         for i in element_to_modify_list:
             expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
 
@@ -851,46 +853,48 @@ class Robot():
             # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
             for joint_name in joints_names_2modify_list :
 
+                joint_index = self.joints[joint_name].id
+
                 for element in element_to_modify_list:
 
-                    if (element in elements_changeDynamics):
+                    if (element in possible_elements_to_modify):
                         if (element == "mass"):
-                            p.changeDynamics(Robot.robot_id, mass = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, mass = value_list.pop(),)
                         elif (element == "lateral_friction"):
-                            p.changeDynamics(Robot.robot_id, lateralFriction = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, lateralFriction = value_list.pop())
                         elif (element == "spinning_friction"):
-                            p.changeDynamics(Robot.robot_id, spinningFriction = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, spinningFriction = value_list.pop())
                         elif (element == "rolling_friction"):
-                            p.changeDynamics(Robot.robot_id, rollingFriction = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, rollingFriction = value_list.pop())
                         elif (element == "restitution"):
-                            p.changeDynamics(Robot.robot_id, restitution = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, restitution = value_list.pop())
                         elif (element == "linear_damping"):
-                            p.changeDynamics(Robot.robot_id, linearDamping = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, linearDamping = value_list.pop())
                         elif (element == "angular_damping"):
-                            p.changeDynamics(Robot.robot_id, angularDamping = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, angularDamping = value_list.pop())
                         elif (element == "contact_stiffness"):
-                            p.changeDynamics(Robot.robot_id, contactStiffness = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, contactStiffness = value_list.pop())
                         elif (element == "friction_anchor"):
-                            p.changeDynamics(Robot.robot_id, frictionAnchor = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, frictionAnchor = value_list.pop())
                         elif (element == "inertia"):
                             func_value_list = []
                             for i in range(3):
-                                func_value_list = element_to_modify_list.pop()
-                            p.changeDynamics(Robot.robot_id, localInertiaDiagnoal = func_value_list )
+                                func_value_list = value_list.pop()
+                            p.changeDynamics(self.robot_id,joint_index, localInertiaDiagonal = func_value_list )
                         elif (element == "collision_sphere_radius"):
-                            p.changeDynamics(Robot.robot_id, ccdSweptSphereRadiu = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, ccdSweptSphereRadiu = value_list.pop())
                         elif (element == "collision_distance_threshold"):
-                            p.changeDynamics(Robot.robot_id, contactProcessingThreshold = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, contactProcessingThreshold = value_list.pop())
                         elif (element == "activation_state"):
-                            p.changeDynamics(Robot.robot_id, activationState = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, activationState = value_list.pop())
                         elif (element == "damping"):
-                            p.changeDynamics(Robot.robot_id, jointDamping = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, jointDamping = value_list.pop())
                         elif (element == "anisotropic_friction"):
-                            p.changeDynamics(Robot.robot_id, anisotropicFriction = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, anisotropicFriction = value_list.pop())
                         elif (element == "max_velocity"):
-                            p.changeDynamics(Robot.robot_id, maxJointVelocity = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, maxJointVelocity = value_list.pop())
                         elif (element == "collision_margin"):
-                            p.changeDynamics(Robot.robot_id, collisionMargin = element_to_modify_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, collisionMargin = value_list.pop())
                     else:
                         print("the parameter "+ element+" it's not a parameter of the changeDynamics parameters")
 
