@@ -7,7 +7,9 @@ Created on Thu Aug  9 16:39:38 2018
 #import csv
 
 class PID(object):
-    def __init__(self):
+    def __init__(self,max_velocity = 30):
+        self.max_velocity = max_velocity
+
         self._kp = 0.1
         self._ki = 0.0
         self._kd = 0.0
@@ -29,7 +31,10 @@ class PID(object):
     def get_target_theta(self):
         return self._target_theta
 
-    def get_velocity(self, theta , max_velocity = 30):
+    def get_velocity(self, theta , max_velocity = None):
+        if(max_velocity == None):
+            max_velocity = self.max_velocity
+            
         error = self._target_theta - theta
         self._thetai += error * self._sampling_time
         dtheta = (error - self._theta0) / self._sampling_time

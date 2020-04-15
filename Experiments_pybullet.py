@@ -12,15 +12,16 @@ from KinovaGen3Class import KinovaGen3
 
 import pandas as pd
 
-experiment = "Single"
-#experiment = "Double"
+#experiment = "Single"
+experiment = "Double"
 #experiment = "Cube"
 timestep = 1./240.
 force_per_one = 1.0
+max_vel = 30
 
 repeats = 20
 folder = "Experiments"
-title = "velocity_0_001"
+title = "Inertia_100"
 
 if __name__ == '__main__':
     p.connect(p.GUI)
@@ -28,14 +29,14 @@ if __name__ == '__main__':
     robot = KinovaGen3()
     robot.visual_inspection = False
 
-    robot.modify_robot_pybullet(robot.robot_control_joints,["velocity"],[0.001]*len(robot.robot_control_joints))
+    robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
     time.sleep(10.0)
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep)
         PID_List = []
         for i in range(len(robot.robot_control_joints) ):
-            PID_List.append( PID() )
+            PID_List.append( PID(max_vel) )
         robot.database_name = "Data_"+str(iteration)
         angles_zero = [0.0]*len(robot.robot_control_joints)
         print(angles_zero)
