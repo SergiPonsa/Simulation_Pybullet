@@ -24,26 +24,43 @@ folder = "Experiments"
 title = "Inertia_100"
 
 if __name__ == '__main__':
+
+    #Connect to pybullet
     p.connect(p.GUI)
     p.setGravity(0.0, 0.0, -9.81)
-    robot = KinovaGen3()
-    robot.visual_inspection = False
 
+    #create the robot
+    robot = KinovaGen3()
+
+    #Decide to wait the real time
+    robot.visual_inspection = True
+
+    #modify some parameter of the robot
     robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
     time.sleep(10.0)
+
+    #Start experiment
+    #Repeat it repeats times
     for iteration in range(repeats):
         # Initialization
-        counter = simSteps(experiment,timestep)
+        counter = simSteps(experiment,timestep) # detemine time
+
+        #create PIDs
         PID_List = []
         for i in range(len(robot.robot_control_joints) ):
             PID_List.append( PID(max_vel) )
         robot.database_name = "Data_"+str(iteration)
+
+        #Move to joint 0
         angles_zero = [0.0]*len(robot.robot_control_joints)
         print(angles_zero)
         robot.save_database = False
         robot.move_joints(joint_param_value = angles_zero, wait=True,desired_force_per_one=force_per_one)
+
+        #Start saving data every time step
         robot.save_database = True
         #time.sleep(10)
+        #Execute experiment during the especified time
         for simStep in range(counter):
 
             #Every step compute the pid
@@ -66,12 +83,17 @@ if __name__ == '__main__':
 
             robot.step_simulation()
 
+    #Change one lasttime the name and simulate to append it to the database list
     robot.database_name = "dummy"
     robot.step_simulation()
 
     dataframe_list = []
     angles_list = []
+
+    #Go through all the database classes created during the experiment
     for data in robot.database_list:
+
+        #pass the data to a list to do the average
         angles_list.append(data.joints_angles_rad)
 
         print(data.name)

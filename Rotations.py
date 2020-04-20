@@ -21,7 +21,13 @@ def simSteps(experiment,timestep):
 def set_target_thetas(num_steps, pid, experiment,simulator, simStep):
     if experiment == "Single":
         if simStep == 0:
+            pid[0].set_target_theta(0)
             pid[1].set_target_theta(-100)
+            pid[2].set_target_theta(0)
+            pid[3].set_target_theta(0)
+            pid[4].set_target_theta(0)
+            pid[5].set_target_theta(0)
+            pid[6].set_target_theta(0)
         else:
             return pid
 
@@ -53,7 +59,7 @@ def set_target_thetas(num_steps, pid, experiment,simulator, simStep):
             pid[3].set_target_theta(90)
         else:
             return pid
-    if simulator == "PyBullet":
-        pid = pid[-2:] + pid[0:-2]
+    #if simulator == "PyBullet":
+        #pid = pid[-2:] + pid[0:-2]
 
     return pid

@@ -6,7 +6,7 @@ class RobotDataBase():
     save_time()
         |- It save the time in the list to be able to have a record that when it happened
     """
-    def __init__(self,name = "Database"):
+    def __init__(self,name = "Database",time_step = 1.0/240.0):
         self.name = name
         self.joints_angles_rad = []
         self.joint_angles_vel_rad = []
@@ -16,7 +16,7 @@ class RobotDataBase():
         self.tcp_orientation_e = []
         self.time = []
 
-        self.time_step = 1.0/240.0
+        self.time_step = time_step
         self.counter = 0
 
     def save_time (self):
