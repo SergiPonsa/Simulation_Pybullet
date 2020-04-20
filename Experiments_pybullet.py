@@ -13,7 +13,8 @@ from KinovaGen3Class import KinovaGen3
 import pandas as pd
 
 #experiment = "Single"
-experiment = "Double"
+#experiment = "Double"
+experiment = "Sergi"
 #experiment = "Cube"
 timestep = 1./240.
 force_per_one = 1.0
@@ -36,8 +37,8 @@ if __name__ == '__main__':
     robot.visual_inspection = True
 
     #modify some parameter of the robot
-    robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
-    time.sleep(10.0)
+    #robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
+    #time.sleep(10.0)
 
     #Start experiment
     #Repeat it repeats times
