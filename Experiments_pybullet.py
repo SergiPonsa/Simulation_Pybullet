@@ -12,36 +12,7 @@ from KinovaGen3Class import KinovaGen3
 
 import pandas as pd
 
-#experiment = "Single"
-#experiment = "Double"
-experiment = "Sergi"
-#experiment = "Cube"
-timestep = 1./240.
-force_per_one = 1.0
-max_vel = 30
-
-repeats = 20
-folder = "Experiments"
-title = "Inertia_100"
-
-if __name__ == '__main__':
-
-    #Connect to pybullet
-    p.connect(p.GUI)
-    p.setGravity(0.0, 0.0, -9.81)
-
-    #create the robot
-    robot = KinovaGen3()
-
-    #Decide to wait the real time
-    robot.visual_inspection = True
-
-    #modify some parameter of the robot
-    #robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
-    #time.sleep(10.0)
-
-    #Start experiment
-    #Repeat it repeats times
+def Do_Experiment(repeats,experiment,robot,max_vel,force_per_one):
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep) # detemine time
@@ -88,6 +59,9 @@ if __name__ == '__main__':
     robot.database_name = "dummy"
     robot.step_simulation()
 
+    return robot
+
+def PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title):
     dataframe_list = []
     angles_list = []
 
@@ -109,7 +83,9 @@ if __name__ == '__main__':
                                 "time": data.time})
         """
 
+        #create the data frame
         aux_df = pd.DataFrame({})
+        #convert data to numpy
         joint_angles = np.array(data.joints_angles_rad)
         for i in range(len(robot.robot_control_joints)):
             column_name = "joint"+str(i)
@@ -118,6 +94,7 @@ if __name__ == '__main__':
         aux_df.index = data.time
         dataframe_list.append(aux_df)
 
+    #create and excel with all the experiments
     # Create a Pandas Excel writer using XlsxWriter as the engine.
     writer = pd.ExcelWriter(folder+"/"+title+"_all_experiments.xlsx", engine='xlsxwriter')
     for count in range ( len(dataframe_list) ):
@@ -127,9 +104,10 @@ if __name__ == '__main__':
     # Close the Pandas Excel writer and output the Excel file.
     writer.save()
 
-    #compute the average
+    #compute the average, convert all the data to numpy to make it easier
     joint_angles_array = np.array(angles_list)
     print(joint_angles_array.shape)
+    #dimensions of the numpy
     [experiments,steps,joints] = joint_angles_array.shape
 
     average_steps = []
@@ -140,6 +118,7 @@ if __name__ == '__main__':
             average_joints.append(average_value)
         average_steps.append(average_joints)
 
+    #create the average data frame
     avg_df = pd.DataFrame({})
 
     joint_angles_average = np.array(average_steps)
@@ -149,3 +128,174 @@ if __name__ == '__main__':
         avg_df[column_name] = joint_angles_average [:,i]
     avg_df.index = data.time
     avg_df.to_excel(folder+"/"+title+"_average.xlsx", sheet_name='Sheet1')
+
+def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder):
+    DF_ToSubstract = pd.read_excel(path_Excel_to_substract)
+    DF_Substract = pd.read_excel(path_Excel_substract)
+
+    np_ToSubstract = DF_ToSubstract.to_numpy()
+    np_Substract = DF_Substract.to_numpy()
+
+    np_result = np_ToSubstract - np_Substract
+
+    DF_Result = pd.DataFrame({})
+    columns = list(DF_ToSubstract.columns)
+
+    print(columns)
+    column = columns.pop(0)
+    for j in range(len(columns)):
+        column = columns.pop(0)
+        DF_Result[column] = np_result[:,j+1]
+    DF_Result.index = list(DF_ToSubstract.index)
+
+    #DF_Result = pd.DataFrame(data=np_result,index=DF_ToSubstract.index,columns=DF_ToSubstract.index)  # 1st row as the column names
+
+    DF_Result.to_excel(folder+"/"+title+"_substract.xlsx", sheet_name='Sheet1')
+
+
+#experiment = "Single"
+experiment = "Double"
+#experiment = "Sergi"
+#experiment = "Cube"
+timestep = 1./240.
+force_per_one = 1.0
+max_vel = 30
+
+repeats = 20
+folder = "Experiments_"+experiment
+title = "Original"
+
+if __name__ == '__main__':
+
+    #Connect to pybullet
+    p.connect(p.GUI)
+    p.setGravity(0.0, 0.0, -9.81)
+
+    #create the robot
+    robot = KinovaGen3()
+
+    #Decide to wait the real time
+    robot.visual_inspection = False
+
+    #Original
+    robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+    PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+
+    """
+    #Modified
+    element_to_modify_list = [["damping"],["damping"],["damping"],["damping"],["damping"],\
+                            ["mass"],["mass"],["mass"],["mass"],\
+                            ["inertia"],["inertia"],["inertia"],["inertia"]]
+    x = len(robot.robot_control_joints)
+    element_to_modify_value_list =[[1.0]*x,[15.5]*x,[15.625]*x,[16.0]*x,[100.0]*x,\
+                                    [1.0]*x,[2.0]*x,[3.0]*x,[4.0]*x,\
+                                    [10.0**-2,10.0**-2,10.0**-2]*x,\
+                                    [5*10.0**-2,5*10.0**-2,5*10.0**-2]*x,\
+                                    [10.0**-3,10.0**-3,10.0**-3]*x,\
+                                    [10.0**1,10.0**1,10.0**1]*x]
+
+
+    #Start experiment
+    #create the robot
+    for element in element_to_modify_list:
+        element_values = element_to_modify_value_list.pop(0)
+        print(element_values)
+        #time.sleep(10)
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        #modify some parameter of the robot
+        #robot.modify_robot_pybullet(robot.robot_control_joints,["inertia"],[100.0,100.0,100.0]*len(robot.robot_control_joints))
+        title = str(element)+"_"+str(element_values)
+
+        robot.modify_robot_pybullet(robot.robot_control_joints,element,element_values)
+        time.sleep(10.0)
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+    velocities = [20,40,50,100]
+
+    for velocity in velocities:
+        max_vel = velocity
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        title = "Max_velocity"+"_"+str(max_vel)
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+        max_vel = 30
+
+    test_force_per_one = [0.75,0.625,0.56,0.5]
+
+    for force_x_one in test_force_per_one:
+        force_per_one = force_x_one
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        title = "Force_x_one"+"_"+str(force_per_one )
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+        force_per_one  = 1
+    """
+    #create urdf to modify
+    file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
+    robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
+    friction_values = [1.0,2.0,10.0,0.5,100.0,10**5]
+
+    for friction in friction_values :
+        friction_v = friction
+        robot.modify_urdf_list(file_2_write_ex2,file_2_write_ex2,robot.robot_control_joints,["friction"],\
+                                                                                        [friction_v,friction_v,friction_v,friction_v,friction_v,friction_v,friction_v]  )
+        #time.sleep(10.0)
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+
+        title = "Friction"+"_"+str(friction)
+
+        robot = KinovaGen3(robot_urdf=file_2_write_ex2)
+        robot.visual_inspection=False
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)

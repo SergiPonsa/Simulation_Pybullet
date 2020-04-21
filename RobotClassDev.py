@@ -783,12 +783,15 @@ class Robot():
         possible_elements_to_modify = self.get_modify_elements_urdf_joint()
         possible_elements_to_modify.extend(self.get_modify_elements_urdf_link())
 
+        print (value_list)
+        #time.sleep(10)
+
         dict_expected_values = {}
         for possible in possible_elements_to_modify:
             if (possible != "inertia"):
-                dict_expected_value[possible] = 6
+                dict_expected_values[possible] = 1
             else:
-                dict_expected_value[possible] = 1
+                dict_expected_values[possible] = 6
 
         expected_values = 0
 
