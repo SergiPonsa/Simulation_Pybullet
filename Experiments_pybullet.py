@@ -154,8 +154,8 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
 
 
 #experiment = "Single"
-experiment = "Double"
-#experiment = "Sergi"
+#experiment = "Double"
+experiment = "Sergi"
 #experiment = "Cube"
 timestep = 1./240.
 force_per_one = 1.0
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
     PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
 
-    """
+
     #Modified
     element_to_modify_list = [["damping"],["damping"],["damping"],["damping"],["damping"],\
                             ["mass"],["mass"],["mass"],["mass"],\
@@ -274,7 +274,7 @@ if __name__ == '__main__':
         SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
 
         force_per_one  = 1
-    """
+
     #create urdf to modify
     file_2_write_ex2 = robot.create_empty_file(robot.robot_urdf)
     robot.Copy_file(robot.robot_urdf,file_2_write_ex2)
