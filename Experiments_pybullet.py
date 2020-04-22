@@ -2,6 +2,7 @@ import os
 import time
 import math
 import numpy as np
+
 import pybullet as p
 import pybullet_data
 from collections import namedtuple
@@ -136,7 +137,14 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
     np_ToSubstract = DF_ToSubstract.to_numpy()
     np_Substract = DF_Substract.to_numpy()
 
-    np_result = np_ToSubstract - np_Substract
+    if (np_Substract.shape != np_ToSubstract.shape):
+
+        print("Data samples have diferent shapes correct it")
+
+
+    np_result = np_ToSubstract[:,1:] - np_Substract[:,1:]
+    np_index = np_ToSubstract[:,:1] - np_Substract[:,:1]
+    print(list(np_index))
 
     DF_Result = pd.DataFrame({})
     columns = list(DF_ToSubstract.columns)
@@ -146,11 +154,14 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
     for j in range(len(columns)):
         column = columns.pop(0)
         DF_Result[column] = np_result[:,j+1]
-    DF_Result.index = list(DF_ToSubstract.index)
+    DF_Result.index = list(np_index )
 
     #DF_Result = pd.DataFrame(data=np_result,index=DF_ToSubstract.index,columns=DF_ToSubstract.index)  # 1st row as the column names
 
     DF_Result.to_excel(folder+"/"+title+"_substract.xlsx", sheet_name='Sheet1')
+
+
+
 
 
 #experiment = "Single"
@@ -187,12 +198,12 @@ if __name__ == '__main__':
                             ["mass"],["mass"],["mass"],["mass"],\
                             ["inertia"],["inertia"],["inertia"],["inertia"]]
     x = len(robot.robot_control_joints)
-    element_to_modify_value_list =[[1.0]*x,[15.5]*x,[15.625]*x,[16.0]*x,[100.0]*x,\
-                                    [1.0]*x,[2.0]*x,[3.0]*x,[4.0]*x,\
-                                    [10.0**-2,10.0**-2,10.0**-2]*x,\
-                                    [5*10.0**-2,5*10.0**-2,5*10.0**-2]*x,\
-                                    [10.0**-3,10.0**-3,10.0**-3]*x,\
-                                    [10.0**1,10.0**1,10.0**1]*x]
+    element_to_modify_value_list =[[1.0]*x,[15.5]*x,[7.25]*x,[10.875]*x,[3.625]*x,\
+                                    [1.5]*x,[2.5]*x,[3.5]*x,[4.5]*x,\
+                                    [10.0**-4,10.0**-4,10.0**-4]*x,\
+                                    [5*10.0**-4,5*10.0**-4,5*10.0**-4]*x,\
+                                    [10.0**-5,10.0**-5,10.0**-5]*x,\
+                                    [10.0**-6,10.0**-6,10.0**-6]*x]
 
 
     #Start experiment
