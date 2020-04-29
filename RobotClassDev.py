@@ -111,6 +111,8 @@ class Robot():
         # launch robot in the world
         self.robot_id = p.loadURDF(os.path.join(root, robot_urdf), robot_launch_pos, robot_launch_orien,flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT )
         print("Robot launched")
+        p.setTimeStep(0.01)
+
 
         # robot data structure
         joint_type_list = ["REVOLUTE", "PRISMATIC", "SPHERICAL", "PLANAR", "FIXED"]

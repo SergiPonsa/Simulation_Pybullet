@@ -213,7 +213,7 @@ if __name__ == '__main__':
         robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
         PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
 
-    """
+
     #Modified
     element_to_modify_list = [["damping"],["damping"],["damping"],["damping"],["damping"],\
                             ["mass"],["mass"],["mass"],["mass"],\
@@ -221,10 +221,10 @@ if __name__ == '__main__':
     x = len(robot.robot_control_joints)
     element_to_modify_value_list =[[1.0]*x,[15.5]*x,[7.25]*x,[10.875]*x,[3.625]*x,\
                                     [1.5]*x,[2.5]*x,[3.5]*x,[4.5]*x,\
-                                    [10.0**-4,10.0**-4,10.0**-4]*x,\
-                                    [5*10.0**-4,5*10.0**-4,5*10.0**-4]*x,\
-                                    [10.0**-5,10.0**-5,10.0**-5]*x,\
-                                    [10.0**-6,10.0**-6,10.0**-6]*x]
+                                    [10.0**-4,2*10.0**-4,3*10.0**-4]*x,\
+                                    [5*10.0**-4,3*5*10.0**-4,2*5*10.0**-4]*x,\
+                                    [2*10.0**-5,10.0**-5,3*10.0**-5]*x,\
+                                    [2*10.0**-6,3*10.0**-6,10.0**-6]*x]
 
 
     #Start experiment
@@ -258,7 +258,7 @@ if __name__ == '__main__':
         SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
 
     velocities = [20,40,50,100]
-
+"""
     for velocity in velocities:
         max_vel = velocity
 
@@ -307,7 +307,7 @@ if __name__ == '__main__':
 
         kp=0.1
 
-"""
+
     kds = [0.1,0.05,0.025,0.2,0.4,0.6,0.8,1.6,10,50]
 
     for v_kd in kds:
@@ -332,7 +332,7 @@ if __name__ == '__main__':
         SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
 
         kd=0.0
-"""
+
     kis = [0.1,0.05,0.025,0.2,0.4,0.6,0.8,1.6]
 
     for v_ki in kis:
