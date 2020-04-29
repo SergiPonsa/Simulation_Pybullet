@@ -13,7 +13,7 @@ from KinovaGen3Class import KinovaGen3
 
 import pandas as pd
 
-def Do_Experiment(repeats,experiment,robot,max_vel,force_per_one):
+def Do_Experiment(repeats,experiment,robot,max_vel=30,force_per_one=1,joint = 1,kp=0.1,ki=0.0,kd=0.0):
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep) # detemine time
@@ -21,7 +21,7 @@ def Do_Experiment(repeats,experiment,robot,max_vel,force_per_one):
         #create PIDs
         PID_List = []
         for i in range(len(robot.robot_control_joints) ):
-            PID_List.append( PID(max_vel) )
+            PID_List.append( PID(max_velocity=max_vel,kp=kp,ki=ki,kd=kd) )
         robot.database_name = "Data_"+str(iteration)
 
         #Move to joint 0
@@ -37,7 +37,7 @@ def Do_Experiment(repeats,experiment,robot,max_vel,force_per_one):
         for simStep in range(counter):
 
             #Every step compute the pid
-            PID_List = set_target_thetas(counter, PID_List,experiment,"PyBullet",simStep)
+            PID_List = set_target_thetas(counter, PID_List,experiment,"PyBullet",simStep,joint)
             print
             #Every 12 steeps apply the control
             if simStep % 12 == 0:
@@ -144,7 +144,8 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
 
     np_result = np_ToSubstract[:,1:] - np_Substract[:,1:]
     np_index = np_ToSubstract[:,:1] - np_Substract[:,:1]
-    print(list(np_index))
+
+    print(len(list(np_index)))
 
     DF_Result = pd.DataFrame({})
     columns = list(DF_ToSubstract.columns)
@@ -152,9 +153,12 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
     print(columns)
     column = columns.pop(0)
     for j in range(len(columns)):
+        print(j)
         column = columns.pop(0)
-        DF_Result[column] = np_result[:,j+1]
-    DF_Result.index = list(np_index )
+        DF_Result[column] = np_result[:,j]
+    newindex = xnew = np.linspace(0, (1/256) *len(list(np_index)), len(list(np_index)))
+    DF_Result.index = newindex
+
 
     #DF_Result = pd.DataFrame(data=np_result,index=DF_ToSubstract.index,columns=DF_ToSubstract.index)  # 1st row as the column names
 
@@ -164,9 +168,9 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
 
 
 
-#experiment = "Single"
+experiment = "Single"
 #experiment = "Double"
-experiment = "Sergi"
+#experiment = "Sergi"
 #experiment = "Cube"
 timestep = 1./240.
 force_per_one = 1.0
@@ -184,15 +188,32 @@ if __name__ == '__main__':
 
     #create the robot
     robot = KinovaGen3()
+    #robot = KinovaGen3(robot_urdf = "models/urdf/JACO3_URDF_V11modpaper.urdf")
 
     #Decide to wait the real time
     robot.visual_inspection = False
 
-    #Original
-    robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
-    PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+    if (experiment == "Single"):
+        for i in range(7):
+            joint = i
+            robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one,joint)
+            title = "original"+"_"+experiment+"_"+str(joint)
+            PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+            p.disconnect()
+            time.sleep(0.1)
+            #Connect to pybullet
+            p.connect(p.GUI)
+            p.setGravity(0.0, 0.0, -9.81)
 
+            #create the robot
+            robot = KinovaGen3()
+            robot.visual_inspection = False
+    else:
+        #Original
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
 
+    """
     #Modified
     element_to_modify_list = [["damping"],["damping"],["damping"],["damping"],["damping"],\
                             ["mass"],["mass"],["mass"],["mass"],\
@@ -261,6 +282,82 @@ if __name__ == '__main__':
 
         max_vel = 30
 
+    kps = [0.1,0.05,0.025,0.2,0.4,0.6,0.8,1.6]
+
+    for v_kp in kps:
+        kp = v_kp
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        title = "kp"+"_"+str(kp)
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one,kp=kp)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+        kp=0.1
+
+"""
+    kds = [0.1,0.05,0.025,0.2,0.4,0.6,0.8,1.6,10,50]
+
+    for v_kd in kds:
+        kd = v_kd
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        title = "kd"+"_"+str(kd)
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one,kd=kd)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+        kd=0.0
+"""
+    kis = [0.1,0.05,0.025,0.2,0.4,0.6,0.8,1.6]
+
+    for v_ki in kis:
+        ki = v_ki
+
+        p.disconnect()
+        time.sleep(0.1)
+        p.connect(p.GUI)
+        p.setGravity(0.0, 0.0, -9.81)
+        robot = KinovaGen3()
+
+
+        #Decide to wait the real time
+        robot.visual_inspection = False
+        title = "ki"+"_"+str(ki)
+
+        #Repeat it repeats times
+        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one,ki=ki)
+        PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
+        path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
+        SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+
+        ki=0.0
+
     test_force_per_one = [0.75,0.625,0.56,0.5]
 
     for force_x_one in test_force_per_one:
@@ -310,3 +407,4 @@ if __name__ == '__main__':
         path_Excel_to_substract = "./"+folder+"/"+title+"_average.xlsx"
         path_Excel_substract = "./"+folder+"/"+"Original"+"_average.xlsx"
         SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
+    """

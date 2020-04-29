@@ -22,10 +22,10 @@ def simSteps(experiment,timestep):
 
     return int(seconds/timestep)
 
-def set_target_thetas(num_steps, pid, experiment,simulator, simStep):
+def set_target_thetas(num_steps, pid, experiment,simulator, simStep , joint = 1):
     if experiment == "Single":
         if simStep == 0:
-            pid[1].set_target_theta(-90)
+            pid[joint].set_target_theta(-90)
         else:
             return pid
 

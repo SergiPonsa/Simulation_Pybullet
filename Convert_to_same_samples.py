@@ -56,8 +56,8 @@ def ConvertToSameSamples_excel2d(path_Excel_1,path_Excel_2,title = ''):
     DF_Result.to_excel(path_to_save, sheet_name='Sheet1')
 
 if __name__ == '__main__':
-    path_Excel_Mujoco = "/home/sergi/GitHub/Mujoco_TFM/Original_Mujoco_Single_average.xlsx"
-    path_Excel_Pybullet = "/home/sergi/GitHub/Simulation_Pybullet/Experiments_Single/Original_average.xlsx"
+    path_Excel_Mujoco = "/home/sergi/GitHub/Mujoco_TFM/real_my_parameters/Single_0_average.xlsx"
+    path_Excel_Pybullet = "/home/sergi/GitHub/Simulation_Pybullet/Real_Experiments/original_Single_0_average.xlsx"
 
     ConvertToSameSamples_excel2d(path_Excel_Mujoco,path_Excel_Pybullet,title = 'converted')
 

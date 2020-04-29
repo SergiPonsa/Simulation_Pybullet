@@ -7,12 +7,12 @@ Created on Thu Aug  9 16:39:38 2018
 #import csv
 
 class PID(object):
-    def __init__(self,max_velocity = 30):
+    def __init__(self,max_velocity = 30,kp=0.1,ki=0.0,kd=0.0):
         self.max_velocity = max_velocity
 
-        self._kp = 0.1
-        self._ki = 0.0
-        self._kd = 0.0
+        self._kp = kp
+        self._ki = ki
+        self._kd = kd
 
 
         self._target_theta = 0.0
@@ -34,7 +34,7 @@ class PID(object):
     def get_velocity(self, theta , max_velocity = None):
         if(max_velocity == None):
             max_velocity = self.max_velocity
-            
+
         error = self._target_theta - theta
         self._thetai += error * self._sampling_time
         dtheta = (error - self._theta0) / self._sampling_time
