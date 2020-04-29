@@ -43,7 +43,8 @@ class KinovaGen3(Robot):
     visual_inspection = True,
 
     tcp_offset_pos = [0.0, 0.0, 0.0],
-    tcp_offset_orien_e = [0.0, 0.0, 0.0]):
+    tcp_offset_orien_e = [0.0, 0.0, 0.0],
+    time_step = 1/240):
 
         #Give the parameters to the robot class
         super(KinovaGen3, self).__init__(urdf_root = urdf_root,
@@ -65,7 +66,10 @@ class KinovaGen3(Robot):
         visual_inspection = visual_inspection,
 
         tcp_offset_pos = tcp_offset_pos,
-        tcp_offset_orien_e = tcp_offset_orien_e)
+        tcp_offset_orien_e = tcp_offset_orien_e,
+
+        time_step=time_step)
+
 
     def Write_modification_test_offset(self,distance_to_test,element_to_modify,element_value_to_modify,counter_test = 10**5,title="",time_home = 0,time_between=0.0):
 

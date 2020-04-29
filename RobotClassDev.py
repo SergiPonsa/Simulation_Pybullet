@@ -46,7 +46,8 @@ class Robot():
                 tcp_offset_pos = [0.0, 0.0, 0.0],
                 tcp_offset_orien_e = [0.0, 0.0, 0.0],
                 save_database = True,
-                database_name = "Database"):
+                database_name = "Database",
+                time_step = 1/240):
 
 
         """Initialization function
@@ -103,6 +104,8 @@ class Robot():
         self.database_name_old = None
         self.database_list = []
 
+        self.time_step = tiem_step
+
 
 
 
@@ -111,7 +114,7 @@ class Robot():
         # launch robot in the world
         self.robot_id = p.loadURDF(os.path.join(root, robot_urdf), robot_launch_pos, robot_launch_orien,flags = p.URDF_USE_SELF_COLLISION_EXCLUDE_PARENT )
         print("Robot launched")
-        p.setTimeStep(0.01)
+        p.setTimeStep(self.time_step)
 
 
         # robot data structure
@@ -528,7 +531,7 @@ class Robot():
 
     def wait(self, time_wait):
         if self.visual_inspection:
-            t = int(240 * time_wait)
+            t = int(time_wait/self.time_step)
         else:
             t = int(time_wait * 20)
         for i in range(t):
@@ -539,7 +542,7 @@ class Robot():
         """Step simulation method"""
         p.stepSimulation()
         if self.visual_inspection:
-            time.sleep(1.0 / 240.0)
+            time.sleep(self.time_step)
 
         if self.save_database:
             self.record_database()
