@@ -104,7 +104,7 @@ class Robot():
         self.database_name_old = None
         self.database_list = []
 
-        self.time_step = tiem_step
+        self.time_step = time_step
 
 
 
