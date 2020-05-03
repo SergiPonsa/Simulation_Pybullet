@@ -858,7 +858,7 @@ class Robot():
             + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values" )
         else:
 
-            # The second one and de following ones it's saved to the first external file, but first it's copied to a dummy
+            # The second one and the following ones it's saved to the first external file, but first it's copied to a dummy
             for joint_name in joints_names_2modify_list :
 
                 joint_index = self.joints[joint_name].id
@@ -906,6 +906,34 @@ class Robot():
                     else:
                         print("the parameter "+ element+" it's not a parameter of the changeDynamics parameters")
 
+    def get_robot_pybullet_param_dynamics(self,joint_names_2read_list):
+
+        first = True
+        for joint_name in joint_names_2read_list :
+            joint_index = self.joints[joint_name].id
+            if (first == True):
+                Data = np.array(p.getDynamicsInfo(self.robot_id,joint_index))
+                first = False
+                #print(Data)
+                #print(Data.shape)
+                #time.sleep(10)
+            else:
+                Data = np.vstack(( Data,np.array(p.getDynamicsInfo(self.robot_id,joint_index)) ))
+        return Data
+    def get_robot_pybullet_param_joints(self,joint_names_2read_list):
+
+        first = True
+        for joint_name in joint_names_2read_list :
+            joint_index = self.joints[joint_name].id
+            if (first == True):
+                Data = np.array(p.getJointInfo(self.robot_id,joint_index))
+                first = False
+                #print(Data)
+                #print(Data.shape)
+                #time.sleep(10)
+            else:
+                Data = np.vstack(( Data,np.array(p.getJointInfo(self.robot_id,joint_index)) ))
+        return Data
 
     def record_database(self):
         if(self.database_name != self.database_name_old):
