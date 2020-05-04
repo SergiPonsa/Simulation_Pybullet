@@ -52,7 +52,7 @@ def Do_Experiment(repeats,experiment,robot,max_vel=30,force_per_one=1,joint = 1,
                     velocity_angles.append( PID_List[i].get_velocity(math.degrees(current_angles[i])) /57.32484076 )
 
                 #Apply the controls
-                robot.move_joints_control_vel( joint_param_value = velocity_angles ,wait = False , desired_force_per_one=force_per_one)
+                robot.move_joints_control_vel( joint_param_value = velocity_angles ,wait = False , desired_force_per_one_list=[force_per_one])
 
             robot.step_simulation()
 
