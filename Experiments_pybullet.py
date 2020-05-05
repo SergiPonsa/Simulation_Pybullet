@@ -168,10 +168,11 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
 
 
 
-experiment = "Single"
+#experiment = "Single"
 #experiment = "Double"
 #experiment = "Sergi"
 #experiment = "Cube"
+experiment = "Training1"
 timestep = 1./240.
 force_per_one = 1.0
 max_vel = 30
@@ -191,7 +192,7 @@ if __name__ == '__main__':
     #robot = KinovaGen3(robot_urdf = "models/urdf/JACO3_URDF_V11modpaper.urdf")
 
     #Decide to wait the real time
-    robot.visual_inspection = False
+    robot.visual_inspection = True
 
     if (experiment == "Single"):
         for i in range(7):

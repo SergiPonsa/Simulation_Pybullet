@@ -236,7 +236,7 @@ class Robot():
                 # make step simulation
                 self.step_simulation()
                 # check position reached
-                jointdiff = self.get_angle_diference(joint_param_value,data_by_joint = False)
+                jointdiff = self.get_angle_difference(joint_param_value,data_by_joint = False)
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
                 if (counter > counter_max):
@@ -292,14 +292,14 @@ class Robot():
                 # make step simulation
                 self.step_simulation()
                 # check position reached
-                jointdiff = self.get_angle_diference(joint_param_value,data_by_joint = False)
+                jointdiff = self.get_angle_difference(joint_param_value,data_by_joint = False)
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
                 if (counter > counter_max):
                     print("maximum iterations reach")
             else:
                 reached = True
-    def get_angle_diference(self,control_joints_target,data_by_joint = False):
+    def get_angle_difference(self,control_joints_target,data_by_joint = False):
         difference_by_joint = []
         for i in range(len(self.robot_control_joints)):
             jointstate_aux = p.getJointState(self.robot_id, self.robot_control_joints_index[i])
@@ -316,7 +316,7 @@ class Robot():
         else:
             return jointdiff
 
-    def get_pose_diference(self,actual_position,actual_orientation_e,desired_position,desired_orientation_e):
+    def get_pose_difference(self,actual_position,actual_orientation_e,desired_position,desired_orientation_e):
         difference = []
         for i,j in zip(actual_position, desired_position):
             difference.append(i-j)

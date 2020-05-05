@@ -74,7 +74,7 @@ class KinovaGen3(Robot):
     def Write_modification_test_offset(self,distance_to_test,element_to_modify,element_value_to_modify,counter_test = 10**5,title="",time_home = 0,time_between=0.0):
 
         #create file with the results
-        record_experimet_f = open("Experiments/"+title+"exp_"+str(element_to_modify,)+"_"+str(element_value_to_modify) +\
+        record_experimet_f = open("Experiments/"+title+"exp_"+str(element_to_modify)+"_"+str(element_value_to_modify) +\
                                 "_steps_"+str(counter_test)+".txt","w")
 
         #Initial position
@@ -105,7 +105,11 @@ class KinovaGen3(Robot):
 
                 [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
 
-                difference = robot.get_pose_diference(actual_position_test,p.getEulerFromQuaternion(actual_orientation_q_test),\
+                actual_joints = robot.get_actual_control_joints_angle()
+
+                actual_joints = list( np.array(actual_joints)*(180/3.14))
+
+                difference = robot.get_pose_difference(actual_position_test,p.getEulerFromQuaternion(actual_orientation_q_test),\
                                         target_pos,p.getEulerFromQuaternion(target_orien_q))
 
                 record_experimet_f.write( "Target position"+ "\n" )
@@ -115,7 +119,9 @@ class KinovaGen3(Robot):
                 record_experimet_f.write( "Difference with the target position"+ "\n" )
                 record_experimet_f.write( str( difference ) + "\n" )
                 record_experimet_f.write( "Difference with the target angles" + "\n" )
-                record_experimet_f.write( str( robot.get_angle_diference(robot.home_angles,data_by_joint=True)) + "\n")
+                record_experimet_f.write( str( robot.get_angle_difference(robot.home_angles,data_by_joint=True)) + "\n")
+                record_experimet_f.write( "Actual joint angles"+ "\n" )
+                record_experimet_f.write( str( actual_joints) + "\n" )
                 record_experimet_f.write("\n" * 2)
 
                 time.sleep(time_home)
@@ -137,13 +143,14 @@ if __name__ == '__main__':
     robot = KinovaGen3()
     print("Class created")
     robot.move_home()
-    element_to_modify = ["mass","friction"]
+    element_to_modify = ["original"]
     element_value_to_modify = [1.0,2.0]
     distance = 0.2
 
     robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 10**5,title="Original Robot",time_home = 2.0,time_between=1.0)
     robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 64,title="Original Robot",time_home = 2.0,time_between=1.0)
 
+    """
     ###############################################
     #Modify all the links mass , don't specify the name
 
@@ -174,7 +181,7 @@ if __name__ == '__main__':
 
     robot.move_home()
     robot.Write_modification_test_offset(distance,"mass",mass_v,counter_test = 64,title="Modified Robot",time_home = 0.1,time_between=0.1)
-
+    """
     """
     ####################################################################
     #Inertia test
