@@ -14,10 +14,10 @@ from KinovaGen3Class import KinovaGen3
 import pandas as pd
 
 def Do_Experiment(repeats,experiment,robot,max_vel_list=[30],force_per_one_list=[1],joint = 1,kp=0.1,ki=0.0,kd=0.0):
-    if (len(desired_force_per_one_list) == 1):
-        desired_force_per_one_list = desired_force_per_one_list *robot.number_robot_control_joints
-    if (len(desired_vel_per_one_list) == 1):
-        desired_vel_per_one_list = desired_vel_per_one_list *robot.number_robot_control_joints
+    if (len(force_per_one_list) == 1):
+        force_per_one_list = force_per_one_list *robot.number_robot_control_joints
+    if (len(max_vel_list) == 1):
+        max_vel_list = max_vel_list *robot.number_robot_control_joints
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep) # detemine time
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     #robot = KinovaGen3(robot_urdf = "models/urdf/JACO3_URDF_V11modpaper.urdf")
 
     #Decide to wait the real time
-    robot.visual_inspection = False
+    robot.visual_inspection = True
 
     if (experiment == "Single"):
         for i in range(7):
@@ -218,7 +218,7 @@ if __name__ == '__main__':
             robot.visual_inspection = False
     else:
         #Original
-        robot = Do_Experiment(repeats,experiment,robot,max_vel,force_per_one)
+        robot = Do_Experiment(repeats,experiment,robot,max_vel_list=[max_vel],force_per_one_list=[force_per_one])
         PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
 
 

@@ -10,7 +10,7 @@ import time
 
 def simSteps(experiment,timestep):
 
-    print (experiment)
+    #print (experiment)
     if experiment == "Single":
         seconds = 6
     elif experiment == "Double":
@@ -90,6 +90,7 @@ def set_target_thetas(num_steps, pid, experiment,simulator, simStep , joint = 1)
             pid[4].set_target_theta(0)
             pid[5].set_target_theta(44.69)
             pid[6].set_target_theta(0)
+
         elif simStep % (num_steps*0.875) == 0:
             #Negative Z
             pid[0].set_target_theta(1.88)

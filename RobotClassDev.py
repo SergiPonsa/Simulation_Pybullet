@@ -240,7 +240,8 @@ class Robot():
                 if (jointdiff <= error_threshold) or (counter > counter_max):
                     reached = True
                 if (counter > counter_max):
-                    print("maximum iterations reach")
+                    if(counter == counter_max):
+                        print("maximum iterations reach")
             else:
                 reached = True
 
@@ -273,7 +274,7 @@ class Robot():
 
                 desired_force_per_one = desired_force_per_one_list[i]
                 desired_vel_per_one = desired_vel_per_one_list[i]
-                
+
                 #Control Joints
                 p.setJointMotorControl2(self.robot_id, self.joints[self.robot_control_joints[i]].id,
                                         p.POSITION_CONTROL, targetPosition = joint_param_value[i],
@@ -869,8 +870,8 @@ class Robot():
             expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
 
         if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
-            print("Expected " + str(expected_values) \
-            + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values" )
+            print("Expected " + str(expected_values* len(joints_names_2modify_list))  \
+            + " and given " + str(len(value_list)) + " values" )
         else:
 
             # The second one and the following ones it's saved to the first external file, but first it's copied to a dummy
@@ -882,42 +883,42 @@ class Robot():
 
                     if (element in possible_elements_to_modify):
                         if (element == "mass"):
-                            p.changeDynamics(self.robot_id,joint_index, mass = value_list.pop(),)
+                            p.changeDynamics(self.robot_id,joint_index, mass = value_list.pop(0))
                         elif (element == "lateral_friction"):
-                            p.changeDynamics(self.robot_id,joint_index, lateralFriction = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, lateralFriction = value_list.pop(0))
                         elif (element == "spinning_friction"):
-                            p.changeDynamics(self.robot_id,joint_index, spinningFriction = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, spinningFriction = value_list.pop(0))
                         elif (element == "rolling_friction"):
-                            p.changeDynamics(self.robot_id,joint_index, rollingFriction = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, rollingFriction = value_list.pop(0))
                         elif (element == "restitution"):
-                            p.changeDynamics(self.robot_id,joint_index, restitution = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, restitution = value_list.pop(0))
                         elif (element == "linear_damping"):
-                            p.changeDynamics(self.robot_id,joint_index, linearDamping = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, linearDamping = value_list.pop(0))
                         elif (element == "angular_damping"):
-                            p.changeDynamics(self.robot_id,joint_index, angularDamping = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, angularDamping = value_list.pop(0))
                         elif (element == "contact_stiffness"):
-                            p.changeDynamics(self.robot_id,joint_index, contactStiffness = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, contactStiffness = value_list.pop(0))
                         elif (element == "friction_anchor"):
-                            p.changeDynamics(self.robot_id,joint_index, frictionAnchor = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, frictionAnchor = value_list.pop(0))
                         elif (element == "inertia"):
                             func_value_list = []
                             for i in range(3):
-                                func_value_list = value_list.pop()
+                                func_value_list.append(value_list.pop(0))
                             p.changeDynamics(self.robot_id,joint_index, localInertiaDiagonal = func_value_list )
                         elif (element == "collision_sphere_radius"):
-                            p.changeDynamics(self.robot_id,joint_index, ccdSweptSphereRadiu = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, ccdSweptSphereRadiu = value_list.pop(0))
                         elif (element == "collision_distance_threshold"):
-                            p.changeDynamics(self.robot_id,joint_index, contactProcessingThreshold = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, contactProcessingThreshold = value_list.pop(0))
                         elif (element == "activation_state"):
-                            p.changeDynamics(self.robot_id,joint_index, activationState = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, activationState = value_list.pop(0))
                         elif (element == "damping"):
-                            p.changeDynamics(self.robot_id,joint_index, jointDamping = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, jointDamping = value_list.pop(0))
                         elif (element == "anisotropic_friction"):
-                            p.changeDynamics(self.robot_id,joint_index, anisotropicFriction = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, anisotropicFriction = value_list.pop(0))
                         elif (element == "max_velocity"):
-                            p.changeDynamics(self.robot_id,joint_index, maxJointVelocity = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, maxJointVelocity = value_list.pop(0))
                         elif (element == "collision_margin"):
-                            p.changeDynamics(self.robot_id,joint_index, collisionMargin = value_list.pop())
+                            p.changeDynamics(self.robot_id,joint_index, collisionMargin = value_list.pop(0))
                     else:
                         print("the parameter "+ element+" it's not a parameter of the changeDynamics parameters")
 
