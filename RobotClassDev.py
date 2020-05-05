@@ -951,7 +951,7 @@ class Robot():
                 self.database_list.append(auxdatabase)
 
             self.database_name_old = self.database_name
-            self.database = RobotDataBase(self.database_name)
+            self.database = RobotDataBase(self.database_name,time_step = self.time_step)
 
         self.database.joints_angles_rad.append( self.get_actual_control_joints_angle() )
         self.database.joint_angles_vel_rad.append( self.get_actual_control_joints_velocity() )

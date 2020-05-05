@@ -44,8 +44,9 @@ class KinovaGen3(Robot):
 
     tcp_offset_pos = [0.0, 0.0, 0.0],
     tcp_offset_orien_e = [0.0, 0.0, 0.0],
-    time_step = 1/240):
+    time_step = 0.005):
 
+        #1/240
         #Give the parameters to the robot class
         super(KinovaGen3, self).__init__(urdf_root = urdf_root,
         root = root,

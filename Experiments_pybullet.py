@@ -39,8 +39,9 @@ def Do_Experiment(repeats,experiment,robot,max_vel=30,force_per_one=1,joint = 1,
             #Every step compute the pid
             PID_List = set_target_thetas(counter, PID_List,experiment,"PyBullet",simStep,joint)
             print
-            #Every 12 steeps apply the control
-            if simStep % 12 == 0:
+            #Every 0.5 seconds apply the control
+            control_steps = int(0.05/robot.time_step)
+            if simStep % control_steps == 0:
                 current_angles=robot.get_actual_control_joints_angle()
                 velocity_angles= []
 
@@ -173,7 +174,7 @@ def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,fo
 #experiment = "Sergi"
 #experiment = "Cube"
 experiment = "Training1"
-timestep = 1./240.
+
 force_per_one = 1.0
 max_vel = 30
 
@@ -189,10 +190,12 @@ if __name__ == '__main__':
 
     #create the robot
     robot = KinovaGen3()
+    timestep = robot.time_step
+
     #robot = KinovaGen3(robot_urdf = "models/urdf/JACO3_URDF_V11modpaper.urdf")
 
     #Decide to wait the real time
-    robot.visual_inspection = True
+    robot.visual_inspection = False
 
     if (experiment == "Single"):
         for i in range(7):

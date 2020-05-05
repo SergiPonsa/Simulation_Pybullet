@@ -21,8 +21,8 @@ def simSteps(experiment,timestep):
         seconds = 20
     elif experiment == "Training1":
         seconds = 30
-
-    return int(seconds/timestep)
+    simSteps_value = (seconds/timestep)
+    return int(simSteps_value)
 
 def set_target_thetas(num_steps, pid, experiment,simulator, simStep , joint = 1):
     if experiment == "Single":
