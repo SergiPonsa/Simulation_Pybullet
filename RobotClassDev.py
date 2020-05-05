@@ -244,7 +244,7 @@ class Robot():
             else:
                 reached = True
 
-    def move_joints(self, joint_param_value = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait=True, counter_max = 10**4, error_threshold = 10 ** -3):
+    def move_joints(self, joint_param_value = None, desired_force_per_one_list = [1], desired_vel_per_one_list = [1] , wait=True, counter_max = 10**4, error_threshold = 10 ** -3):
         """Class method to control robot position by passing joint angles
         joint_param_value (list): joint angles aimed to reach
         desired_force_per_one (double): the value in per 1 of the maximum joint force  to be applied
@@ -257,16 +257,23 @@ class Robot():
 
         if (joint_param_value == None):
             joint_param_value = self.home_angles
-
+        if (len(desired_force_per_one_list) == 1):
+            desired_force_per_one_list = desired_force_per_one_list *self.number_robot_control_joints
+        if (len(desired_vel_per_one_list) == 1):
+            desired_vel_per_one_list = desired_vel_per_one_list *self.number_robot_control_joints
 
         reached = False
         counter = 0
+
         while not reached:
 
             counter += 1
             # Define the control to be applied
             for i in range(len(self.robot_control_joints)):
 
+                desired_force_per_one = desired_force_per_one_list[i]
+                desired_vel_per_one = desired_vel_per_one_list[i]
+                
                 #Control Joints
                 p.setJointMotorControl2(self.robot_id, self.joints[self.robot_control_joints[i]].id,
                                         p.POSITION_CONTROL, targetPosition = joint_param_value[i],

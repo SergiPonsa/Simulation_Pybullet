@@ -13,7 +13,11 @@ from KinovaGen3Class import KinovaGen3
 
 import pandas as pd
 
-def Do_Experiment(repeats,experiment,robot,max_vel=30,force_per_one=1,joint = 1,kp=0.1,ki=0.0,kd=0.0):
+def Do_Experiment(repeats,experiment,robot,max_vel_list=[30],force_per_one_list=[1],joint = 1,kp=0.1,ki=0.0,kd=0.0):
+    if (len(desired_force_per_one_list) == 1):
+        desired_force_per_one_list = desired_force_per_one_list *robot.number_robot_control_joints
+    if (len(desired_vel_per_one_list) == 1):
+        desired_vel_per_one_list = desired_vel_per_one_list *robot.number_robot_control_joints
     for iteration in range(repeats):
         # Initialization
         counter = simSteps(experiment,timestep) # detemine time
@@ -28,7 +32,7 @@ def Do_Experiment(repeats,experiment,robot,max_vel=30,force_per_one=1,joint = 1,
         angles_zero = [0.0]*len(robot.robot_control_joints)
         print(angles_zero)
         robot.save_database = False
-        robot.move_joints(joint_param_value = angles_zero, wait=True,desired_force_per_one=force_per_one)
+        robot.move_joints(joint_param_value = angles_zero, wait=True)
 
         #Start saving data every time step
         robot.save_database = True
