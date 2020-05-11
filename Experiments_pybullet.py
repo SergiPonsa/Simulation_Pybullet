@@ -135,6 +135,93 @@ def PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title):
     avg_df.index = data.time
     avg_df.to_excel(folder+"/"+title+"_average.xlsx", sheet_name='Sheet1')
 
+def PassRobotDatabaseClass_2_excel_tcppos(robot,folder,title):
+    dataframe_list = []
+    tcp_position_list = []
+    tcp_orientation_e_list = []
+
+    #Go through all the database classes created during the experiment
+    for data in robot.database_list:
+
+        #pass the data to a list to do the average
+        tcp_position_list.append(data.tcp_position)
+        tcp_orientation_e_list.append(data.tcp_orientation_e)
+
+        print(data.name)
+        print("\n")
+
+        #create the data frame
+        aux_df = pd.DataFrame({})
+
+        #convert data to numpy
+        tcp_position_np = np.array(data.tcp_position)
+
+        aux_df["pos x"] = tcp_position_np [:,0]
+        aux_df["pos y"] = tcp_position_np [:,1]
+        aux_df["pos z"] = tcp_position_np [:,2]
+
+        tcp_orientation_e = np.array(data.tcp_orientation_e)
+
+        aux_df["ori x"] = tcp_orientation_e [:,0]
+        aux_df["ori y"] = tcp_orientation_e [:,1]
+        aux_df["ori z"] = tcp_orientation_e [:,2]
+
+
+        aux_df.index = data.time
+        dataframe_list.append(aux_df)
+
+    #create and excel with all the experiments
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    writer = pd.ExcelWriter(folder+"/"+title+"_all_experiments_pos.xlsx", engine='xlsxwriter')
+    for count in range ( len(dataframe_list) ):
+        #dataframe_list[count].head
+        dataframe_list[count].to_excel(writer, sheet_name='Sheet'+str(count))
+
+    # Close the Pandas Excel writer and output the Excel file.
+    writer.save()
+
+    #compute the average, convert all the data to numpy to make it easier
+    tcp_position_array = np.array(tcp_position_list)
+    print(tcp_position_array.shape)
+    #dimensions of the numpy
+    [experiments,steps,tcp_position] = tcp_position_array.shape
+    #compute the average, convert all the data to numpy to make it easier
+    tcp_orientation_e_array = np.array(tcp_orientation_e_list)
+    print(tcp_orientation_e_array.shape)
+    #dimensions of the numpy
+    [experiments,steps,tcp_orientation_e] = tcp_orientation_e_array.shape
+
+    average_pos_steps = []
+    average_ori_steps = []
+    for stp in range(steps):
+        average_pos = []
+        average_ori = []
+        for j in range(tcp_position):
+            average_value = np.average(tcp_position_array[:,stp,j])
+            average_pos.append(average_value)
+            average_value = np.average(tcp_orientation_e_array[:,stp,j])
+            average_ori.append(average_value)
+        average_pos_steps.append(average_pos)
+        average_ori_steps.append(average_ori)
+
+    #create the average data frame
+    avg_df = pd.DataFrame({})
+
+    tcp_pos_average = np.array(average_pos_steps)
+    tcp_ori_average = np.array(average_ori_steps)
+
+    avg_df["pos x"] = tcp_pos_average [:,0]
+    avg_df["pos y"] = tcp_pos_average [:,1]
+    avg_df["pos z"] = tcp_pos_average [:,2]
+
+    avg_df["ori x"] = tcp_ori_average [:,0]
+    avg_df["ori y"] = tcp_ori_average [:,1]
+    avg_df["ori z"] = tcp_ori_average [:,2]
+
+
+    avg_df.index = data.time
+    avg_df.to_excel(folder+"/"+title+"_average_pos.xlsx", sheet_name='Sheet1')
+
 def SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder):
     DF_ToSubstract = pd.read_excel(path_Excel_to_substract)
     DF_Substract = pd.read_excel(path_Excel_substract)
@@ -199,7 +286,7 @@ if __name__ == '__main__':
     #robot = KinovaGen3(robot_urdf = "models/urdf/JACO3_URDF_V11modpaper.urdf")
 
     #Decide to wait the real time
-    robot.visual_inspection = True
+    robot.visual_inspection = False
 
     if (experiment == "Single"):
         for i in range(7):
@@ -220,8 +307,9 @@ if __name__ == '__main__':
         #Original
         robot = Do_Experiment(repeats,experiment,robot,max_vel_list=[max_vel],force_per_one_list=[force_per_one])
         PassRobotDatabaseClass_2_excel_jointpos(robot,folder,title)
+        PassRobotDatabaseClass_2_excel_tcppos(robot,folder,title)
 
-
+"""
     #Modified
     element_to_modify_list = [["damping"],["damping"],["damping"],["damping"],["damping"],\
                             ["mass"],["mass"],["mass"],["mass"],\
@@ -266,6 +354,7 @@ if __name__ == '__main__':
         SubstractExcel_2_excel(path_Excel_to_substract,path_Excel_substract,title,folder)
 
     velocities = [20,40,50,100]
+"""
 """
     for velocity in velocities:
         max_vel = velocity

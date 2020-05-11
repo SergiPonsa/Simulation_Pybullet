@@ -57,7 +57,7 @@ def ConvertToSameSamples_excel2d(path_Excel_1,path_Excel_2,title = ''):
 
 if __name__ == '__main__':
     path_Excel_Mujoco = "/home/sergi/GitHub/Mujoco_TFM/Original_Mujoco_Training1_average.xlsx"
-    path_Excel_Pybullet = "/home/sergi/GitHub/Simulation_Pybullet/Experiments_Training1/Original_average.xlsx"
+    path_Excel_Pybullet = "/home/sergi/GitHub/Parameters_CrossEntrophy_TFM/Test_enverionment.xlsx"
 
     ConvertToSameSamples_excel2d(path_Excel_Mujoco,path_Excel_Pybullet,title = 'converted')
 
