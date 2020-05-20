@@ -367,7 +367,7 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
-    def move_cartesian(self, pose, max_iterations = 10**8 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+    def move_cartesian(self, pose, max_iterations = 10**8 ,nullspace = None, desired_force_per_one_list = [1], desired_vel_per_one_list = [1] , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
 
         if (nullspace == None):
             nullspace = self.nullspace
@@ -376,7 +376,7 @@ class Robot():
          and orientation and working out the correspondence to joint angles
          to call 'move_joints'
 
-        pose (list): pose, i.e., position + orientation (as roll, pitch, yaw)
+        pose (list): pose, i.e., position + orientation quaternion
         max_iterations (int): maximum number of iterations to solve the inverse kinematics
         nullspace (boolean): find the nearest to the defined position and limits or the nearest to the actual position
 
@@ -399,7 +399,7 @@ class Robot():
         joint_param_value = list(inv_result)
 
         # perform control action with 'joint_param_value'
-        self.move_joints(joint_param_value = joint_param_value, wait = wait,desired_force_per_one=desired_force_per_one,desired_vel_per_one=desired_vel_per_one,counter_max=counter_max,error_threshold=error_threshold)
+        self.move_joints(joint_param_value = joint_param_value, wait = wait,desired_force_per_one_list=desired_force_per_one_list,desired_vel_per_one_list=desired_vel_per_one_list,counter_max=counter_max,error_threshold=error_threshold)
 
     def move_home(self):
         """Class method that sends robot to 'home' position"""
