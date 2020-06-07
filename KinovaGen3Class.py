@@ -38,7 +38,7 @@ class KinovaGen3(Robot):
     robot_mimic_multiplier = [],
     tool_orient_e = [-3.14,0,1.57],
 
-    nullspace = True,
+    nullspace = False,
     home_angles = [0, 0.392, 0.0, 1.962, 0.0, 0.78, 0.0],
     visual_inspection = True,
 
@@ -79,7 +79,7 @@ class KinovaGen3(Robot):
                                 "_steps_"+str(counter_test)+".txt","w")
 
         #Initial position
-        robot.move_home()
+        self.move_home()
 
 
         dirrection = ["x","y","z"]
@@ -100,17 +100,17 @@ class KinovaGen3(Robot):
                 print(offset)
                 offset[dict_pos[i]] = j * distance_to_test
                 print(offset)
-                [target_pos,target_orien_q] = robot.get_cartesian_offset_target_pose(offset,[0,0,0])
+                [target_pos,target_orien_q] = self.get_cartesian_offset_target_pose(offset,[0,0,0])
 
-                robot.move_cartesian_offset(offset,[0,0,0],counter_max = counter_test)
+                self.move_cartesian_offset(offset,[0,0,0],counter_max = counter_test)
 
-                [actual_position_test,actual_orientation_q_test] = robot.get_actual_tcp_pose()
+                [actual_position_test,actual_orientation_q_test] = self.get_actual_tcp_pose()
 
-                actual_joints = robot.get_actual_control_joints_angle()
+                actual_joints = self.get_actual_control_joints_angle()
 
                 actual_joints = list( np.array(actual_joints)*(180/3.14))
 
-                difference = robot.get_pose_difference(actual_position_test,p.getEulerFromQuaternion(actual_orientation_q_test),\
+                difference = self.get_pose_difference(actual_position_test,p.getEulerFromQuaternion(actual_orientation_q_test),\
                                         target_pos,p.getEulerFromQuaternion(target_orien_q))
 
                 record_experimet_f.write( "Target position"+ "\n" )
@@ -126,7 +126,7 @@ class KinovaGen3(Robot):
                 record_experimet_f.write("\n" * 2)
 
                 time.sleep(time_home)
-                robot.move_home()
+                self.move_home()
 
             time.sleep(time_between)
         record_experimet_f.close()
@@ -146,8 +146,8 @@ if __name__ == '__main__':
     robot.move_home()
     element_to_modify = ["original"]
     element_value_to_modify = [1.0,2.0]
-    distance = 0.2
-
+    distance = 0.05
+    #robot.time_step = 0.02
     robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 10**5,title="Original Robot",time_home = 2.0,time_between=1.0)
     robot.Write_modification_test_offset(distance,element_to_modify,element_value_to_modify,counter_test = 64,title="Original Robot",time_home = 2.0,time_between=1.0)
 

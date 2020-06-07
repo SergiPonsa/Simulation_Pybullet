@@ -47,7 +47,7 @@ def ConvertToXSamples_excel2d(path_Excel_1,title = '',number_of_samples = 40):
     DF_Result.to_excel(path_to_save, sheet_name='Sheet1')
 
 if __name__ == '__main__':
-    path_Excel_Mujoco = "/home/sergi/GitHub/Mujoco_TFM/test_tcp_19_average.xlsx"
+    path_Excel_Mujoco = "/home/sergi/GitHubRishabh/gen3-mujoco_mod/Joint_Trajectori_19.xlsx"
 
     ConvertToXSamples_excel2d(path_Excel_Mujoco,title = 'converted',number_of_samples = 40)
 

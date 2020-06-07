@@ -25,8 +25,11 @@ class PID(object):
         self._theta0 = 0.0
         self._thetai = 0.0
 
-    def set_target_theta(self, theta):
-        self._target_theta = theta
+    def set_target_theta(self, theta, degrees = True):
+        if(degrees==True):
+            self._target_theta = theta
+        else:
+            self._target_theta = theta*(180/3.14)
 
     def get_target_theta(self):
         return self._target_theta

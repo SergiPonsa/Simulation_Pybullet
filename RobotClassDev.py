@@ -13,6 +13,7 @@ import math
 import numpy as np
 import pybullet as p
 import pybullet_data
+from scipy.optimize import fsolve
 from RobotDataBaseClass import RobotDataBase
 from collections import namedtuple
 from attrdict import AttrDict
@@ -367,6 +368,160 @@ class Robot():
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
 
+    def inverse_kinematics_7dof_kinova_gen3(self,pose_desired,current_joints,robot_theta_zeros,ToolOri = True):
+        dh_a = []
+        dh_d = []
+        dh_alpha = []
+        robot_theta_zeros = []
+        #Use the Paper Closedforminversekinematicssolutionforaredundantanthropomorphicrobotarm
+        # http://iranarze.ir/wp-content/uploads/2016/11/E552.pdf
+        theta_4 = []
+        #Compute angle 4
+        auxdividend_1 = (dh_d[2]**2 - 2*dh_d[2]*dh_d[4] + d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+
+        auxdivisor_1 = (dh_d[2]**2 + 2*dh_d[2]*dh_d[4] + d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+        theta_4.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+        theta_4.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+
+        #Compute angle 1,2 & 3
+        #I keep the second angle as it was
+        theta_2 = actual_joints[1]
+
+        #k1 & theta_3
+        k1 = []
+        theta_3 = []
+        for th_4 in theta_4:
+            k1_aux = theta_2**2 * theta_4 **2 * (dh_d[2] + dh_d[4]-desired_position[2])\
+            + theta_2**2 * (dh_d[2] - dh_d[4] - desired_position[2])\
+            + theta_4**2 * (-dh_d[2] - dh_d[4]-desired_position[2])\
+            - dh_d[2] + dh_d[4] - desired_position[2]
+
+            k1.append(k1_aux)
+
+            auxdividend_1 = k1_aux + 4 * dh_d[4] * theta_2 *th_4
+            auxdivisor_1 = k1_aux - 4 * dh_d[4] * theta_2 *th_4
+
+            theta_3.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+            theta_3.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+
+        # We have 2 possible theta_4 and for each theta_4 2 possibles theta_3
+
+        # k2 & theta_1
+        k2 = []
+        theta_1 = []
+        for i in range(len(theta_4)):
+            th_4 = theta_4[i]
+
+            for j in range(2):
+                th_3 = theta_3[i*2 + j]
+                k2_aux = math.sqrt(pose_desired[0]**2 + pose_desired[1]**2)\
+                    * (theta_2**2 + 1) * (th_3**2 +1) * (th_4**2 +1)\
+                        + 2*th_4*dh_d[4] * (1-th_3**2) * (1-theta_2**2)\
+                        + 2 *(th_3**2 +1) * theta_2 \
+                            *(dh_d[2]*(th_4**2+1) + dh_d[4]*(1-th_4**2))
+
+                k2.append(k2_aux)
+
+                auxdividend_1 = 4 * th_3 *th_4 *dh_d[4]\
+                    *(theta_2**2 + 1)\
+                    *(math.sqrt(desired_position[0]**2 + desired_position[1]**2) + desired_position[0])\
+                        +desired_position[1] * k2_aux
+
+                auxdivisor_1 = -4 *th_3 *th_4 * dh_d[4]\
+                    *(theta_2**2 + 1)\
+                        +k2_aux\
+                        * (math.sqrt(desired_position[0]**2 + desired_position[1]**2) + desired_position[0])
+
+                theta_1.append(auxdividend_1/auxdivisor_1)
+
+        #Computation of the possible thetas of the Wrist,
+        # Define the system of equation
+        def sys_eq_sph_w_p(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = -np.cos(q7)*np.sin(q5)-np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = -np.sin(q6)*np.sin(q7)
+            sz = -np.cos(q5)*np.cos(q7)+np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = -np.cos(q5)*np.sin(q6)
+            ay = np.cos(q6)
+            az = np.sin(q5)*np.sin(q6)
+
+            eq1 = -q6 + math.atan2(math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(ay,ax)
+            eq3 = -q7 + math.atan2(sz,-nz)
+
+        def sys_eq_sph_w_n(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = np.cos(q7)*np.sin(q5)+np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = np.sin(q6)*np.sin(q7)
+            sz = np.cos(q5)*np.cos(q7)-np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = np.cos(q5)*np.sin(q6)
+            ay = -np.cos(q6)
+            az = -np.sin(q5)*np.sin(q6)
+
+            eq1 = -q6 + math.atan2(-math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(-ay,-ax)
+            eq3 = -q7 + math.atan2(-sz,nz)
+
+        #solve the system closer to
+        q567i = actual_joints[-3:]
+        theta_5_p,theta_6_p,theta_7_p = fsolve(sys_eq_sph_w,q567i)
+        theta_5_n,theta_6_n,theta_7_n = fsolve(sys_eq_sph_w,q567i)
+
+        #From all the possible options chosse the closer one to the actual joints
+        theta_result = [0]*7
+        theta_result[1] = theta_2
+
+        #chose the theta 4, then theta 3 and theta1
+        if ( abs(actual_joints[3]-theta_4[0]) <= abs(actual_joints[3]-theta_4[1]) ):
+            theta_result[3] = theta_4[0]
+            if ( abs(actual_joints[2]-theta_3[0]) <= abs(actual_joints[2]-theta_3[1]) ):
+                theta_result[2] = theta_3[0]
+                theta_result[0] = theta_1[0]
+            else:
+                theta_result[2] = theta_3[1]
+                theta_result[0] = theta_1[1]
+        else:
+            theta_result[3] = theta_4[1]
+            if ( abs(actual_joints[2]-theta_3[2]) <= abs(actual_joints[2]-theta_3[3]) ):
+                theta_result[2] = theta_3[2]
+                theta_result[0] = theta_1[2]
+            else:
+                theta_result[2] = theta_3[3]
+                theta_result[0] = theta_1[3]
+
+        #chosse theta 5 , 6 & 7
+
+        diffp = abs(theta_5_p-actual_joints[4]) + abs(theta_6_p-actual_joints[5]) +abs(theta_7_p-actual_joints[6])
+        diffn = abs(theta_5_n-actual_joints[4]) + abs(theta_6_n-actual_joints[5]) +abs(theta_7_n-actual_joints[6])
+
+        if(diffp <= diffn):
+            theta_result [4] = theta_5_p
+            theta_result [5] = theta_6_p
+            theta_result [6] = theta_7_p
+        else:
+            theta_result [4] = theta_5_n
+            theta_result [5] = theta_6_n
+            theta_result [6] = theta_7_n
+
+
+
+
     def move_cartesian(self, pose, max_iterations = 10**8 ,nullspace = None, desired_force_per_one_list = [1], desired_vel_per_one_list = [1] , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
 
         if (nullspace == None):
@@ -387,15 +542,16 @@ class Robot():
 
         if (nullspace == True):
 
-            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],
-                                                      maxNumIterations = max_iterations,
-                                                      lowerLimits = self.lower_limit,
-                                                      upperLimits = self.upper_limit,
-                                                      jointRanges = self.joint_range,
+            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],\
+                                                      maxNumIterations = max_iterations,\
+                                                      lowerLimits = self.lower_limit,\
+                                                      upperLimits = self.upper_limit,\
+                                                      jointRanges = self.joint_range,\
                                                       restPoses = self.resting_pose)
         else:
-            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],
-                                                      maxNumIterations = max_iteration)
+            print("I don't use the null space")
+            inv_result = p.calculateInverseKinematics(self.robot_id, self.last_robot_joint_index, pose[0], pose[1],\
+                                                      maxNumIterations = max_iterations)
         joint_param_value = list(inv_result)
 
         # perform control action with 'joint_param_value'
@@ -454,13 +610,13 @@ class Robot():
 
         return [move_position,move_orientation_q]
 
-    def move_cartesian_offset(self,desired_position_offset,desired_orientation_e_offset,max_iterations = 1000 ,nullspace = None, desired_force_per_one = 1, desired_vel_per_one = 1 , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
+    def move_cartesian_offset(self,desired_position_offset,desired_orientation_e_offset,max_iterations = 1000 ,nullspace = None, desired_force_per_one_list = [1], desired_vel_per_one_list = [1] , wait = True, counter_max = 20, error_threshold = 10 ** -3):
 
         [move_position,move_orientation_q] = self.get_cartesian_offset_target_pose(desired_position_offset,desired_orientation_e_offset)
 
         self.move_cartesian([move_position,move_orientation_q],max_iterations=max_iterations\
-                            ,nullspace=nullspace,desired_force_per_one=desired_force_per_one\
-                            ,desired_vel_per_one=desired_vel_per_one,wait=wait\
+                            ,nullspace=nullspace,desired_force_per_one_list=desired_force_per_one_list\
+                            ,desired_vel_per_one_list=desired_vel_per_one_list,wait=wait\
                             ,counter_max=counter_max,error_threshold=error_threshold)
 
     def get_robot_base_pose_from_world_pose(world_position,world_orientation_q):
@@ -921,6 +1077,72 @@ class Robot():
                             p.changeDynamics(self.robot_id,joint_index, collisionMargin = value_list.pop(0))
                     else:
                         print("the parameter "+ element+" it's not a parameter of the changeDynamics parameters")
+    def modify_robot_pybullet_base(self,element_to_modify_list, value_list ):
+
+        possible_elements_to_modify = ["mass_base","inertia_base"]
+
+        #Check the elements lenght it's right before do nothing
+
+        dict_expected_values = {}
+        for possible in possible_elements_to_modify:
+            if (possible == "inertia_base"):
+                dict_expected_values[possible] = 3
+            else:
+                dict_expected_values[possible] = 1
+
+        expected_values = 0
+        for i in element_to_modify_list:
+            expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
+
+        if( (expected_values == 0) or ( expected_values != len(value_list) ) ):
+            print("Expected " + str(expected_values)  \
+            + " and given " + str(len(value_list)) + " values" )
+        else:
+
+            joint_index = 0
+
+            for element in element_to_modify_list:
+
+                if (element in possible_elements_to_modify):
+                    if (element == "mass_base"):
+                        p.changeDynamics(self.robot_id,joint_index, mass = value_list.pop(0))
+                    elif (element == "lateral_friction_base"):
+                        p.changeDynamics(self.robot_id,joint_index, lateralFriction = value_list.pop(0))
+                    elif (element == "spinning_friction_base"):
+                        p.changeDynamics(self.robot_id,joint_index, spinningFriction = value_list.pop(0))
+                    elif (element == "rolling_friction_base"):
+                        p.changeDynamics(self.robot_id,joint_index, rollingFriction = value_list.pop(0))
+                    elif (element == "restitution_base"):
+                        p.changeDynamics(self.robot_id,joint_index, restitution = value_list.pop(0))
+                    elif (element == "linear_damping_base"):
+                        p.changeDynamics(self.robot_id,joint_index, linearDamping = value_list.pop(0))
+                    elif (element == "angular_damping_base"):
+                        p.changeDynamics(self.robot_id,joint_index, angularDamping = value_list.pop(0))
+                    elif (element == "contact_stiffness_base"):
+                        p.changeDynamics(self.robot_id,joint_index, contactStiffness = value_list.pop(0))
+                    elif (element == "friction_anchor_base"):
+                        p.changeDynamics(self.robot_id,joint_index, frictionAnchor = value_list.pop(0))
+                    elif (element == "inertia_base"):
+                        func_value_list = []
+                        for i in range(3):
+                            func_value_list.append(value_list.pop(0))
+                        p.changeDynamics(self.robot_id,joint_index, localInertiaDiagonal = func_value_list )
+                    elif (element == "collision_sphere_radius_base"):
+                        p.changeDynamics(self.robot_id,joint_index, ccdSweptSphereRadiu = value_list.pop(0))
+                    elif (element == "collision_distance_threshold_base"):
+                        p.changeDynamics(self.robot_id,joint_index, contactProcessingThreshold = value_list.pop(0))
+                    elif (element == "activation_state_base"):
+                        p.changeDynamics(self.robot_id,joint_index, activationState = value_list.pop(0))
+                    elif (element == "damping_base"):
+                        p.changeDynamics(self.robot_id,joint_index, jointDamping = value_list.pop(0))
+                    elif (element == "anisotropic_friction_base"):
+                        p.changeDynamics(self.robot_id,joint_index, anisotropicFriction = value_list.pop(0))
+                    elif (element == "max_velocity_base"):
+                        p.changeDynamics(self.robot_id,joint_index, maxJointVelocity = value_list.pop(0))
+                    elif (element == "collision_margin_base"):
+                        p.changeDynamics(self.robot_id,joint_index, collisionMargin = value_list.pop(0))
+                else:
+                    print("the parameter "+ element+" it's not a parameter of the changeDynamics base parameters")
 
     def get_robot_pybullet_param_dynamics(self,joint_names_2read_list):
 

@@ -15,7 +15,7 @@ from KinovaGen3Class import KinovaGen3
 
 import pandas as pd
 
-path_Excel = "/home/sergi/GitHub/Parameters_CrossEntrophy_TFM/Original_Mujoco_Training1_averageconverted.xlsx"
+path_Excel = "/home/sergi/GitHubRishabh/gen3-mujoco_mod/Joint_Trajectori_19converted.xlsx"
 
 p.connect(p.GUI)
 p.setGravity(0.0, 0.0, -9.81)
