@@ -367,42 +367,230 @@ class Robot():
             for j,k in enumerate([0,1,3]):
                 jointsdata[i*3+j] = jointstate_aux[k]
         return jointsdata
+    def forward_kinematics_7dof_kinova_gen3_1(self,current_joints):
+        dh_a = [0]*8
+        dh_d = [0,\
+            -(0.1564+0.1284)\
+            ,-(0.0054+0.0064)\
+            ,-(0.2104+0.2104)\
+            ,-(0.0064+0.0064)\
+            ,-(0.2084+0.1059)\
+            ,0\
+            ,-(0.1059+0.0615)]
+        dh_alpha = [3.14, 1.57, 1.57, 1.57, 1.57, 1.57, 1.57, 3.14]
+        robot_theta_zeros = [0,0, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+        robot_theta = np.zeros(8)
+        robot_theta [1:] = list(\
+            np.array(robot_theta_zeros[1:])\
+             + np.array(current_joints)\
+             )
 
-    def inverse_kinematics_7dof_kinova_gen3(self,pose_desired,current_joints,robot_theta_zeros,ToolOri = True):
-        dh_a = []
-        dh_d = []
-        dh_alpha = []
-        robot_theta_zeros = []
+        TKinova = np.zeros([8,4,4])
+        for i in range(8):
+            TKinova[i,0,0] = np.cos(robot_theta[i])
+            TKinova[i,1,0] = np.sin(robot_theta[i])
+
+            TKinova[i,0,1] = -np.cos(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,1] = np.cos(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,1] = np.sin(dh_alpha[i])
+
+            TKinova[i,0,2] = np.sin(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,2] = -np.sin(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,2] = np.cos(dh_alpha[i])
+
+            TKinova[i,0,3] = dh_a[i] * np.cos(robot_theta[i])
+            TKinova[i,1,3] = dh_a[i] * np.sin(robot_theta[i])
+            TKinova[i,2,3] = dh_d[i]
+            TKinova[i,3,3] = 1
+
+        TBaseEnd = np.identity(4)
+
+        for i in range(0,8):
+            TBaseEnd = np.dot(TBaseEnd,TKinova[i,:,:])
+
+        return TBaseEnd
+
+    def forward_kinematics_7dof_kinova_gen3_1_2(self,current_joints):
+        dh_a = [0]*8
+        dh_d = [0\
+            ,0\
+            ,0\
+            ,-(0.1564+0.1284+0.2104+0.2104)\
+            ,-(0.0054+0.0064+0.0064+0.0064)\
+            ,-(0.2084+0.1059+0.1059+0.0615)\
+            ,0\
+            ,0]
+        #due to where I have the sensor the last 0.0615 I am no counting it
+        dh_alpha = [3.14, 1.57, -1.57, 1.57, -1.57, 1.57, -1.57, 3.14]
+
+        robot_theta = np.zeros(8)
+        robot_theta [1:] = list(np.array(current_joints))
+
+        TKinova = np.zeros([8,4,4])
+        for i in range(8):
+            TKinova[i,0,0] = np.cos(robot_theta[i])
+            TKinova[i,1,0] = np.sin(robot_theta[i])
+
+            TKinova[i,0,1] = -np.cos(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,1] = np.cos(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,1] = np.sin(dh_alpha[i])
+
+            TKinova[i,0,2] = np.sin(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,2] = -np.sin(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,2] = np.cos(dh_alpha[i])
+
+            TKinova[i,0,3] = dh_a[i] * np.cos(robot_theta[i])
+            TKinova[i,1,3] = dh_a[i] * np.sin(robot_theta[i])
+            TKinova[i,2,3] = dh_d[i]
+            TKinova[i,3,3] = 1
+
+        TBaseEnd = np.identity(4)
+
+        for i in range(0,8):
+            TBaseEnd = np.dot(TBaseEnd,TKinova[i,:,:])
+
+        return TBaseEnd
+
+    def forward_kinematics_7dof_kinova_gen3_2(self,current_joints):
+        q = current_joints
+
+        T01 = np.array([\
+        [np.cos(q[0]),     -np.sin(q[0]),       0,          0],\
+        [-np.sin(q[0]),    -np.cos(q[0]),       0,          0],\
+        [0,                 0,                 -1,          0.1564],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T12 = np.array([\
+        [np.cos(q[1]),     -np.sin(q[1]),       0,          0],\
+        [0,                 0,                 -1,          0.0054],\
+        [np.sin(q[1]),     np.cos(q[1]),        0,         -0.1284],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T23 = np.array([\
+        [np.cos(q[2]),     -np.sin(q[2]),       0,          0],\
+        [0,                 0,                  1,         -0.2104],\
+        [-np.sin(q[2]),    -np.cos(q[2]),       0,         -0.0064],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T34 = np.array([\
+        [np.cos(q[3]),     -np.sin(q[3]),       0,          0],\
+        [0,                 0,                 -1,         -0.0064],\
+        [np.sin(q[3]),      np.cos(q[3]),       0,         -0.2104],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T45 = np.array([\
+        [np.cos(q[4]),     -np.sin(q[4]),       0,          0],\
+        [0,                 0,                  1,         -0.2084],\
+        [-np.sin(q[4]),    -np.cos(q[4]),       0,         -0.0064],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T56 = np.array([\
+        [np.cos(q[5]),     -np.sin(q[5]),       0,          0],\
+        [0           ,      0           ,      -1,          0],\
+        [np.sin(q[5]),      np.cos(q[5]),       0,         -0.1059],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T67 = np.array([\
+        [np.cos(q[6]),     -np.sin(q[6]),       0,          0],\
+        [0,                 0,                 -1,         -0.1059],\
+        [-np.sin(q[6]),    -np.cos(q[6]),       0,          0],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T67m = np.array([\
+        [np.cos(q[6]),     -np.sin(q[6]),       0,          0],\
+        [0,                 0,                 -1,         -0.1059*1.4],\
+        [-np.sin(q[6]),    -np.cos(q[6]),       0,          0],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        #print("T67", T67)
+        #print("\n")
+
+        T7E = np.array([\
+        [1,                 0,                  0,          0],\
+        [0,                -1,                  0,          0],\
+        [0,                 0,                 -1,         -0.0615],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        TBaseEnd = np.dot(T01, T12)
+        #print("TB2 ",TBaseEnd,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T23)
+        #print("TB3 ",TBaseEnd,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T34)
+        #print("TB4 ",TBaseEnd,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T45)
+        #print("TB5 ",TBaseEnd,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T56)
+        #print("TB6 ",TBaseEnd,"\n")
+        TB7m = np.dot(TBaseEnd, T67m)
+        #print("TB7m ",TB7m,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T67)
+        #print("TB7 ",TBaseEnd,"\n")
+        TBaseEnd = np.dot(TBaseEnd, T7E)
+
+        return TB7m
+
+
+
+
+    def inverse_kinematics_7dof_kinova_gen3_2(self,pose_desired,current_joints):
+        #pose defined x,y,z | RPY
+
+        #i don't take the accoun the base I computed later
+        dh_a = [0]*7
+        dh_d = [0\
+            ,0\
+            ,-(0.1564+0.1284+0.2104+0.2104)\
+            ,0\
+            ,-(0.2084+0.1059+0.1059+0.0615)\
+            ,0\
+            ,0]
+        dh_alpha = [1.57, 1.57, 1.57, 1.57, 1.57, 1.57, 3.14]
+        robot_theta_zeros = [0, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
         #Use the Paper Closedforminversekinematicssolutionforaredundantanthropomorphicrobotarm
         # http://iranarze.ir/wp-content/uploads/2016/11/E552.pdf
         theta_4 = []
         #Compute angle 4
-        auxdividend_1 = (dh_d[2]**2 - 2*dh_d[2]*dh_d[4] + d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+        auxdividend_1 = (dh_d[2]**2 - 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
 
-        auxdivisor_1 = (dh_d[2]**2 + 2*dh_d[2]*dh_d[4] + d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+        auxdivisor_1 = (dh_d[2]**2 + 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
         theta_4.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
         theta_4.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
 
         #Compute angle 1,2 & 3
         #I keep the second angle as it was
-        theta_2 = actual_joints[1]
-
+        theta_2 = current_joints[1]+robot_theta_zeros[1]
+        theta_result = [0]*7
+        theta_result[1] = theta_2
         #k1 & theta_3
         k1 = []
         theta_3 = []
         for th_4 in theta_4:
-            k1_aux = theta_2**2 * theta_4 **2 * (dh_d[2] + dh_d[4]-desired_position[2])\
-            + theta_2**2 * (dh_d[2] - dh_d[4] - desired_position[2])\
-            + theta_4**2 * (-dh_d[2] - dh_d[4]-desired_position[2])\
-            - dh_d[2] + dh_d[4] - desired_position[2]
+            k1_aux = theta_2**2 * th_4 **2 * (dh_d[2] + dh_d[4]-pose_desired[2])\
+            + theta_2**2 * (dh_d[2] - dh_d[4] - pose_desired[2])\
+            + th_4**2 * (-dh_d[2] - dh_d[4]-pose_desired[2])\
+            - dh_d[2] + dh_d[4] - pose_desired[2]
 
             k1.append(k1_aux)
 
             auxdividend_1 = k1_aux + 4 * dh_d[4] * theta_2 *th_4
             auxdivisor_1 = k1_aux - 4 * dh_d[4] * theta_2 *th_4
 
-            theta_3.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
-            theta_3.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+            try:
+                theta_3.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+            except:
+                print("Check the formulas above")
+                theta_3.append(math.sqrt( (auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( (auxdividend_1/auxdivisor_1) ))
 
         # We have 2 possible theta_4 and for each theta_4 2 possibles theta_3
 
@@ -418,29 +606,124 @@ class Robot():
                     * (theta_2**2 + 1) * (th_3**2 +1) * (th_4**2 +1)\
                         + 2*th_4*dh_d[4] * (1-th_3**2) * (1-theta_2**2)\
                         + 2 *(th_3**2 +1) * theta_2 \
-                            *(dh_d[2]*(th_4**2+1) + dh_d[4]*(1-th_4**2))
+                            *(dh_d[2]*(th_4**2 + 1) + dh_d[4]*(1-th_4**2))
 
                 k2.append(k2_aux)
 
                 auxdividend_1 = 4 * th_3 *th_4 *dh_d[4]\
                     *(theta_2**2 + 1)\
-                    *(math.sqrt(desired_position[0]**2 + desired_position[1]**2) + desired_position[0])\
-                        +desired_position[1] * k2_aux
+                    *( math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0] )\
+                        +pose_desired[1] * k2_aux
 
+                #Should be multiplied by the position theta2 but it's much worst
                 auxdivisor_1 = -4 *th_3 *th_4 * dh_d[4]\
                     *(theta_2**2 + 1)\
                         +k2_aux\
-                        * (math.sqrt(desired_position[0]**2 + desired_position[1]**2) + desired_position[0])
+                        * (math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0])
 
                 theta_1.append(auxdividend_1/auxdivisor_1)
 
+
+
+        actual_joints_com = list(\
+            np.array(current_joints)\
+            + np.array(robot_theta_zeros)\
+            )
+
+        #chose the theta 4, then theta 3 and theta1
+        if ( abs(actual_joints_com[3]-theta_4[0]) <= abs(actual_joints_com[3]-theta_4[1]) ):
+            theta_result[3] = theta_4[0]
+            if ( abs(actual_joints_com[2]-theta_3[0]) <= abs(actual_joints_com[2]-theta_3[1]) ):
+                theta_result[2] = theta_3[0]
+                theta_result[0] = theta_1[0]
+            else:
+                theta_result[2] = theta_3[1]
+                theta_result[0] = theta_1[1]
+        else:
+            theta_result[3] = theta_4[1]
+            if ( abs(actual_joints_com[2]-theta_3[2]) <= abs(actual_joints_com[2]-theta_3[3]) ):
+                theta_result[2] = theta_3[2]
+                theta_result[0] = theta_1[2]
+            else:
+                theta_result[2] = theta_3[3]
+                theta_result[0] = theta_1[3]
+
+        theta_result_ret = list(\
+            np.array(theta_result)\
+            - np.array(robot_theta_zeros)\
+            )
+        print("theta_result_ret 1st half ",theta_result_ret,"\n")
         #Computation of the possible thetas of the Wrist,
+
+        q = theta_result_ret
+
+        dh_a = [0]*8
+        dh_d = [0\
+            ,0\
+            ,0\
+            ,-(0.1564+0.1284+0.2104+0.2104)\
+            ,-(0.0054+0.0064+0.0064+0.0064)\
+            ,-(0.2084+0.1059+0.1059+0.0615)\
+            ,0\
+            ,0]
+        #due to where I have the sensor the last 0.0615 I am no counting it
+        dh_alpha = [3.14, 1.57, -1.57, 1.57, -1.57, 1.57, -1.57, 3.14]
+
+        robot_theta = np.zeros(8)
+        robot_theta [1:] = list(np.array(q))
+
+        TKinova = np.zeros([5,4,4])
+        for i in range(5):
+            TKinova[i,0,0] = np.cos(robot_theta[i])
+            TKinova[i,1,0] = np.sin(robot_theta[i])
+
+            TKinova[i,0,1] = -np.cos(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,1] = np.cos(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,1] = np.sin(dh_alpha[i])
+
+            TKinova[i,0,2] = np.sin(dh_alpha[i]) * np.sin(robot_theta[i])
+            TKinova[i,1,2] = -np.sin(dh_alpha[i]) * np.cos(robot_theta[i])
+            TKinova[i,2,2] = np.cos(dh_alpha[i])
+
+            TKinova[i,0,3] = dh_a[i] * np.cos(robot_theta[i])
+            TKinova[i,1,3] = dh_a[i] * np.sin(robot_theta[i])
+            TKinova[i,2,3] = dh_d[i]
+            TKinova[i,3,3] = 1
+
+        TBaseEnd = np.identity(4)
+
+        for i in range(0,5):
+            TB4 = np.dot(TBaseEnd,TKinova[i,:,:])
+
+        TB4i = np.linalg.inv(TB4)
+
+        #Compute the desired rotational
+        Euler = pose_desired[-3:].copy()
+        Tran = pose_desired[:-3].copy()
+        print("Euler ",Euler)
+        print("Tran ",Tran)
+        TBE = self.getHomogeniusFromEulTran(Euler,Tran)
+
+        T4E = np.dot(TB4i,TBE)
+
+        nx = T4E[0,0]
+        ny = T4E[0,1]
+        nz = T4E[0,2]
+
+        sx = T4E[1,0]
+        sy = T4E[1,1]
+        sz = T4E[1,2]
+
+        ax = T4E[2,0]
+        ay = T4E[2,1]
+        az = T4E[2,2]
+
         # Define the system of equation
         def sys_eq_sph_w_p(q):
             q5 = q[0]
             q6 = q[1]
             q7 = q[2]
-
+            """
             nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
             ny = np.cos(q7)*np.sin(q6)
             nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
@@ -452,16 +735,19 @@ class Robot():
             ax = -np.cos(q5)*np.sin(q6)
             ay = np.cos(q6)
             az = np.sin(q5)*np.sin(q6)
-
+            """
             eq1 = -q6 + math.atan2(math.sqrt(ax**2+ay**2),az)
             eq2 = -q5 + math.atan2(ay,ax)
             eq3 = -q7 + math.atan2(sz,-nz)
+
+            return [eq1,eq2,eq3]
 
         def sys_eq_sph_w_n(q):
             q5 = q[0]
             q6 = q[1]
             q7 = q[2]
 
+            """
             nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
             ny = np.cos(q7)*np.sin(q6)
             nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
@@ -473,24 +759,140 @@ class Robot():
             ax = np.cos(q5)*np.sin(q6)
             ay = -np.cos(q6)
             az = -np.sin(q5)*np.sin(q6)
+            """
 
             eq1 = -q6 + math.atan2(-math.sqrt(ax**2+ay**2),az)
             eq2 = -q5 + math.atan2(-ay,-ax)
             eq3 = -q7 + math.atan2(-sz,nz)
 
-        #solve the system closer to
-        q567i = actual_joints[-3:]
-        theta_5_p,theta_6_p,theta_7_p = fsolve(sys_eq_sph_w,q567i)
-        theta_5_n,theta_6_n,theta_7_n = fsolve(sys_eq_sph_w,q567i)
+            return [eq1,eq2,eq3]
 
-        #From all the possible options chosse the closer one to the actual joints
+        #solve the system closer to
+        q567i = current_joints[-3:]
+        theta_5_p,theta_6_p,theta_7_p = fsolve(sys_eq_sph_w_p,q567i)
+        theta_5_n,theta_6_n,theta_7_n = fsolve(sys_eq_sph_w_n,q567i)
+
+
+
+
+        #chosse theta 5 , 6 & 7
+
+        diffp = abs(theta_5_p-actual_joints_com[4]) + abs(theta_6_p-actual_joints_com[5]) +abs(theta_7_p-actual_joints_com[6])
+        diffn = abs(theta_5_n-actual_joints_com[4]) + abs(theta_6_n-actual_joints_com[5]) +abs(theta_7_n-actual_joints_com[6])
+
+        if(diffp <= diffn):
+            theta_result_ret [4] = theta_5_p
+            theta_result_ret [5] = theta_6_p
+            theta_result_ret [6] = theta_7_p
+        else:
+            theta_result_ret [4] = theta_5_n
+            theta_result_ret [5] = theta_6_n
+            theta_result_ret [6] = theta_7_n
+
+
+
+        return theta_result_ret
+
+    def get_jacobian(self,current_joints):
+        pos, vel, torq = get_actual_control_joints_angle(self.robot_id)
+        result = p.getLinkState(self.robot_id, self.last_robot_joint_index, computeLinkVelocity=1, computeForwardKinematics=1)
+        link_trn, link_rot, com_trn, com_rot, frame_pos, frame_rot, link_vt, link_vr = result
+        jac_t, jac_r = p.calculateJacobian(self.robot_id, self.last_robot_joint_index, com_trn, pos, zero_vec, zero_vec)
+
+
+    def inverse_kinematics_7dof_kinova_gen3(self,pose_desired,current_joints):
+        #pose defined x,y,z | RPY
+
+        #i don't take the accoun the base I computed later
+        dh_a = [0]*7
+        dh_d = [-(0.1564+0.1284)\
+            ,-(0.0054+0.0064)\
+            ,-(0.2104+0.2104)\
+            ,-(0.0064+0.0064)\
+            ,-(0.2084+0.1059)\
+            ,0\
+            ,-(0.1059+0.0615)]
+        dh_alpha = [1.57, 1.57, 1.57, 1.57, 1.57, 1.57, 3.14]
+        robot_theta_zeros = [0, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+        #Use the Paper Closedforminversekinematicssolutionforaredundantanthropomorphicrobotarm
+        # http://iranarze.ir/wp-content/uploads/2016/11/E552.pdf
+        theta_4 = []
+        #Compute angle 4
+        auxdividend_1 = (dh_d[2]**2 - 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+
+        auxdivisor_1 = (dh_d[2]**2 + 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+        theta_4.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+        theta_4.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+
+        #Compute angle 1,2 & 3
+        #I keep the second angle as it was
+        theta_2 = current_joints[1]+robot_theta_zeros[1]
         theta_result = [0]*7
         theta_result[1] = theta_2
+        #k1 & theta_3
+        k1 = []
+        theta_3 = []
+        for th_4 in theta_4:
+            k1_aux = theta_2**2 * th_4 **2 * (dh_d[2] + dh_d[4]-pose_desired[2])\
+            + theta_2**2 * (dh_d[2] - dh_d[4] - pose_desired[2])\
+            + th_4**2 * (-dh_d[2] - dh_d[4]-pose_desired[2])\
+            - dh_d[2] + dh_d[4] - pose_desired[2]
+
+            k1.append(k1_aux)
+
+            auxdividend_1 = k1_aux + 4 * dh_d[4] * theta_2 *th_4
+            auxdivisor_1 = k1_aux - 4 * dh_d[4] * theta_2 *th_4
+
+            try:
+                theta_3.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+            except:
+                print("Check the formulas above")
+                theta_3.append(math.sqrt( (auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( (auxdividend_1/auxdivisor_1) ))
+
+        # We have 2 possible theta_4 and for each theta_4 2 possibles theta_3
+
+        # k2 & theta_1
+        k2 = []
+        theta_1 = []
+        for i in range(len(theta_4)):
+            th_4 = theta_4[i]
+
+            for j in range(2):
+                th_3 = theta_3[i*2 + j]
+                k2_aux = math.sqrt(pose_desired[0]**2 + pose_desired[1]**2)\
+                    * (theta_2**2 + 1) * (th_3**2 +1) * (th_4**2 +1)\
+                        + 2*th_4*dh_d[4] * (1-th_3**2) * (1-theta_2**2)\
+                        + 2 *(th_3**2 +1) * theta_2 \
+                            *(dh_d[2]*(th_4**2 + 1) + dh_d[4]*(1-th_4**2))
+
+                k2.append(k2_aux)
+
+                auxdividend_1 = 4 * th_3 *th_4 *dh_d[4]\
+                    *(theta_2**2 + 1)\
+                    *( math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0] )\
+                        +pose_desired[1] * k2_aux
+
+                #Should be multiplied by the position theta2 but it's much worst
+                auxdivisor_1 = -4 *th_3 *th_4 * dh_d[4]\
+                    *(theta_2**2 + 1)\
+                        +k2_aux\
+                        * (math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0])
+
+                theta_1.append(auxdividend_1/auxdivisor_1)
+
+
+
+        actual_joints_com = list(\
+            np.array(current_joints)\
+            + np.array(robot_theta_zeros)\
+            )
 
         #chose the theta 4, then theta 3 and theta1
-        if ( abs(actual_joints[3]-theta_4[0]) <= abs(actual_joints[3]-theta_4[1]) ):
+        if ( abs(actual_joints_com[3]-theta_4[0]) <= abs(actual_joints_com[3]-theta_4[1]) ):
             theta_result[3] = theta_4[0]
-            if ( abs(actual_joints[2]-theta_3[0]) <= abs(actual_joints[2]-theta_3[1]) ):
+            if ( abs(actual_joints_com[2]-theta_3[0]) <= abs(actual_joints_com[2]-theta_3[1]) ):
                 theta_result[2] = theta_3[0]
                 theta_result[0] = theta_1[0]
             else:
@@ -498,29 +900,426 @@ class Robot():
                 theta_result[0] = theta_1[1]
         else:
             theta_result[3] = theta_4[1]
-            if ( abs(actual_joints[2]-theta_3[2]) <= abs(actual_joints[2]-theta_3[3]) ):
+            if ( abs(actual_joints_com[2]-theta_3[2]) <= abs(actual_joints_com[2]-theta_3[3]) ):
                 theta_result[2] = theta_3[2]
                 theta_result[0] = theta_1[2]
             else:
                 theta_result[2] = theta_3[3]
                 theta_result[0] = theta_1[3]
 
+        theta_result_ret = list(\
+            np.array(theta_result)\
+            - np.array(robot_theta_zeros)\
+            )
+        print("theta_result_ret 1st half ",theta_result_ret,"\n")
+        #Computation of the possible thetas of the Wrist,
+
+        q = theta_result_ret
+
+        T01 = np.array([\
+        [np.cos(q[0]),     -np.sin(q[0]),       0,          0],\
+        [-np.sin(q[0]),    -np.cos(q[0]),       0,          0],\
+        [0,                 0,                 -1,          0.1564],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T12 = np.array([\
+        [np.cos(q[1]),     -np.sin(q[1]),       0,          0],\
+        [0,                 0,                 -1,          0.0054],\
+        [np.sin(q[1]),     np.cos(q[1]),        0,         -0.1284],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T23 = np.array([\
+        [np.cos(q[2]),     -np.sin(q[2]),       0,          0],\
+        [0,                 0,                  1,         -0.2104],\
+        [-np.sin(q[2]),    -np.cos(q[2]),       0,         -0.0064],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T34 = np.array([\
+        [np.cos(q[3]),     -np.sin(q[3]),       0,          0],\
+        [0,                 0,                 -1,         -0.0064],\
+        [np.sin(q[3]),      np.cos(q[3]),       0,         -0.2104],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        TB4 = np.dot(T01,T12)
+        TB4 = np.dot(TB4,T23)
+        TB4 = np.dot(TB4,T34)
+        TB4i = np.linalg.inv(TB4)
+
+        #Compute the desired rotational
+        Euler = pose_desired[-3:].copy()
+        Tran = pose_desired[:-3].copy()
+        print("Euler ",Euler)
+        print("Tran ",Tran)
+        TBE = self.getHomogeniusFromEulTran(Euler,Tran)
+
+        T4E = np.dot(TB4i,TBE)
+
+        nx = T4E[0,0]
+        ny = T4E[0,1]
+        nz = T4E[0,2]
+
+        sx = T4E[1,0]
+        sy = T4E[1,1]
+        sz = T4E[1,2]
+
+        ax = T4E[2,0]
+        ay = T4E[2,1]
+        az = T4E[2,2]
+
+        # Define the system of equation
+        def sys_eq_sph_w_p(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+            """
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = -np.cos(q7)*np.sin(q5)-np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = -np.sin(q6)*np.sin(q7)
+            sz = -np.cos(q5)*np.cos(q7)+np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = -np.cos(q5)*np.sin(q6)
+            ay = np.cos(q6)
+            az = np.sin(q5)*np.sin(q6)
+            """
+            eq1 = -q6 + math.atan2(math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(ay,ax)
+            eq3 = -q7 + math.atan2(sz,-nz)
+
+            return [eq1,eq2,eq3]
+
+        def sys_eq_sph_w_n(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+
+            """
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = np.cos(q7)*np.sin(q5)+np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = np.sin(q6)*np.sin(q7)
+            sz = np.cos(q5)*np.cos(q7)-np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = np.cos(q5)*np.sin(q6)
+            ay = -np.cos(q6)
+            az = -np.sin(q5)*np.sin(q6)
+            """
+
+            eq1 = -q6 + math.atan2(-math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(-ay,-ax)
+            eq3 = -q7 + math.atan2(-sz,nz)
+
+            return [eq1,eq2,eq3]
+
+        #solve the system closer to
+        q567i = current_joints[-3:]
+        theta_5_p,theta_6_p,theta_7_p = fsolve(sys_eq_sph_w_p,q567i)
+        theta_5_n,theta_6_n,theta_7_n = fsolve(sys_eq_sph_w_n,q567i)
+
+
+
+
         #chosse theta 5 , 6 & 7
 
-        diffp = abs(theta_5_p-actual_joints[4]) + abs(theta_6_p-actual_joints[5]) +abs(theta_7_p-actual_joints[6])
-        diffn = abs(theta_5_n-actual_joints[4]) + abs(theta_6_n-actual_joints[5]) +abs(theta_7_n-actual_joints[6])
+        diffp = abs(theta_5_p-actual_joints_com[4]) + abs(theta_6_p-actual_joints_com[5]) +abs(theta_7_p-actual_joints_com[6])
+        diffn = abs(theta_5_n-actual_joints_com[4]) + abs(theta_6_n-actual_joints_com[5]) +abs(theta_7_n-actual_joints_com[6])
 
         if(diffp <= diffn):
-            theta_result [4] = theta_5_p
-            theta_result [5] = theta_6_p
-            theta_result [6] = theta_7_p
+            theta_result_ret [4] = theta_5_p
+            theta_result_ret [5] = theta_6_p
+            theta_result_ret [6] = theta_7_p
         else:
-            theta_result [4] = theta_5_n
-            theta_result [5] = theta_6_n
-            theta_result [6] = theta_7_n
+            theta_result_ret [4] = theta_5_n
+            theta_result_ret [5] = theta_6_n
+            theta_result_ret [6] = theta_7_n
 
 
 
+        return theta_result_ret
+
+    def inverse_kinematics_7dof_kinova_gen3(self,pose_desired,current_joints):
+        #pose defined x,y,z | RPY
+
+        #i don't take the accoun the base I computed later
+        dh_a = [0]*7
+        dh_d = [-(0.1564+0.1284)\
+            ,-(0.0054+0.0064)\
+            ,-(0.2104+0.2104)\
+            ,-(0.0064+0.0064)\
+            ,-(0.2084+0.1059)\
+            ,0\
+            ,-(0.1059+0.0615)]
+        dh_alpha = [1.57, 1.57, 1.57, 1.57, 1.57, 1.57, 3.14]
+        robot_theta_zeros = [0, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14]
+        #Use the Paper Closedforminversekinematicssolutionforaredundantanthropomorphicrobotarm
+        # http://iranarze.ir/wp-content/uploads/2016/11/E552.pdf
+        theta_4 = []
+        #Compute angle 4
+        auxdividend_1 = (dh_d[2]**2 - 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+
+        auxdivisor_1 = (dh_d[2]**2 + 2*dh_d[2]*dh_d[4] + dh_d[4]**2 - pose_desired[0]**2 - pose_desired[1]**2 - pose_desired[2]**2)
+        theta_4.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+        theta_4.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+
+        #Compute angle 1,2 & 3
+        #I keep the second angle as it was
+        theta_2 = current_joints[1]+robot_theta_zeros[1]
+        theta_result = [0]*7
+        theta_result[1] = theta_2
+        #k1 & theta_3
+        k1 = []
+        theta_3 = []
+        for th_4 in theta_4:
+            k1_aux = theta_2**2 * th_4 **2 * (dh_d[2] + dh_d[4]-pose_desired[2])\
+            + theta_2**2 * (dh_d[2] - dh_d[4] - pose_desired[2])\
+            + th_4**2 * (-dh_d[2] - dh_d[4]-pose_desired[2])\
+            - dh_d[2] + dh_d[4] - pose_desired[2]
+
+            k1.append(k1_aux)
+
+            auxdividend_1 = k1_aux + 4 * dh_d[4] * theta_2 *th_4
+            auxdivisor_1 = k1_aux - 4 * dh_d[4] * theta_2 *th_4
+
+            try:
+                theta_3.append(math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( -(auxdividend_1/auxdivisor_1) ))
+            except:
+                print("Check the formulas above")
+                theta_3.append(math.sqrt( (auxdividend_1/auxdivisor_1) ))
+                theta_3.append(-1*math.sqrt( (auxdividend_1/auxdivisor_1) ))
+
+        # We have 2 possible theta_4 and for each theta_4 2 possibles theta_3
+
+        # k2 & theta_1
+        k2 = []
+        theta_1 = []
+        for i in range(len(theta_4)):
+            th_4 = theta_4[i]
+
+            for j in range(2):
+                th_3 = theta_3[i*2 + j]
+                k2_aux = math.sqrt(pose_desired[0]**2 + pose_desired[1]**2)\
+                    * (theta_2**2 + 1) * (th_3**2 +1) * (th_4**2 +1)\
+                        + 2*th_4*dh_d[4] * (1-th_3**2) * (1-theta_2**2)\
+                        + 2 *(th_3**2 +1) * theta_2 \
+                            *(dh_d[2]*(th_4**2 + 1) + dh_d[4]*(1-th_4**2))
+
+                k2.append(k2_aux)
+
+                auxdividend_1 = 4 * th_3 *th_4 *dh_d[4]\
+                    *(theta_2**2 + 1)\
+                    *( math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0] )\
+                        +pose_desired[1] * k2_aux
+
+                #Should be multiplied by the position theta2 but it's much worst
+                auxdivisor_1 = -4 *th_3 *th_4 * dh_d[4]\
+                    *(theta_2**2 + 1)\
+                        +k2_aux\
+                        * (math.sqrt(pose_desired[0]**2 + pose_desired[1]**2) + pose_desired[0])
+
+                theta_1.append(auxdividend_1/auxdivisor_1)
+
+
+
+        actual_joints_com = list(\
+            np.array(current_joints)\
+            + np.array(robot_theta_zeros)\
+            )
+
+        #chose the theta 4, then theta 3 and theta1
+        if ( abs(actual_joints_com[3]-theta_4[0]) <= abs(actual_joints_com[3]-theta_4[1]) ):
+            theta_result[3] = theta_4[0]
+            if ( abs(actual_joints_com[2]-theta_3[0]) <= abs(actual_joints_com[2]-theta_3[1]) ):
+                theta_result[2] = theta_3[0]
+                theta_result[0] = theta_1[0]
+            else:
+                theta_result[2] = theta_3[1]
+                theta_result[0] = theta_1[1]
+        else:
+            theta_result[3] = theta_4[1]
+            if ( abs(actual_joints_com[2]-theta_3[2]) <= abs(actual_joints_com[2]-theta_3[3]) ):
+                theta_result[2] = theta_3[2]
+                theta_result[0] = theta_1[2]
+            else:
+                theta_result[2] = theta_3[3]
+                theta_result[0] = theta_1[3]
+
+        theta_result_ret = list(\
+            np.array(theta_result)\
+            - np.array(robot_theta_zeros)\
+            )
+        print("theta_result_ret 1st half ",theta_result_ret,"\n")
+        #Computation of the possible thetas of the Wrist,
+
+        q = theta_result_ret
+
+        T01 = np.array([\
+        [np.cos(q[0]),     -np.sin(q[0]),       0,          0],\
+        [-np.sin(q[0]),    -np.cos(q[0]),       0,          0],\
+        [0,                 0,                 -1,          0.1564],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T12 = np.array([\
+        [np.cos(q[1]),     -np.sin(q[1]),       0,          0],\
+        [0,                 0,                 -1,          0.0054],\
+        [np.sin(q[1]),     np.cos(q[1]),        0,         -0.1284],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T23 = np.array([\
+        [np.cos(q[2]),     -np.sin(q[2]),       0,          0],\
+        [0,                 0,                  1,         -0.2104],\
+        [-np.sin(q[2]),    -np.cos(q[2]),       0,         -0.0064],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        T34 = np.array([\
+        [np.cos(q[3]),     -np.sin(q[3]),       0,          0],\
+        [0,                 0,                 -1,         -0.0064],\
+        [np.sin(q[3]),      np.cos(q[3]),       0,         -0.2104],\
+        [0,                 0,                  0,          1]\
+        ])
+
+        TB4 = np.dot(T01,T12)
+        TB4 = np.dot(TB4,T23)
+        TB4 = np.dot(TB4,T34)
+        TB4i = np.linalg.inv(TB4)
+
+        #Compute the desired rotational
+        Euler = pose_desired[-3:].copy()
+        Tran = pose_desired[:-3].copy()
+        print("Euler ",Euler)
+        print("Tran ",Tran)
+        TBE = self.getHomogeniusFromEulTran(Euler,Tran)
+
+        T4E = np.dot(TB4i,TBE)
+
+        nx = T4E[0,0]
+        ny = T4E[0,1]
+        nz = T4E[0,2]
+
+        sx = T4E[1,0]
+        sy = T4E[1,1]
+        sz = T4E[1,2]
+
+        ax = T4E[2,0]
+        ay = T4E[2,1]
+        az = T4E[2,2]
+
+        # Define the system of equation
+        def sys_eq_sph_w_p(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+            """
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = -np.cos(q7)*np.sin(q5)-np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = -np.sin(q6)*np.sin(q7)
+            sz = -np.cos(q5)*np.cos(q7)+np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = -np.cos(q5)*np.sin(q6)
+            ay = np.cos(q6)
+            az = np.sin(q5)*np.sin(q6)
+            """
+            eq1 = -q6 + math.atan2(math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(ay,ax)
+            eq3 = -q7 + math.atan2(sz,-nz)
+
+            return [eq1,eq2,eq3]
+
+        def sys_eq_sph_w_n(q):
+            q5 = q[0]
+            q6 = q[1]
+            q7 = q[2]
+
+            """
+            nx = -np.sin(q5)*np.sin(q7)+np.cos(q5)*np.cos(q6)*np.cos(q7)
+            ny = np.cos(q7)*np.sin(q6)
+            nz = -np.cos(q5)*np.sin(q7)-np.cos(q6)*np.cos(q7)*np.sin(q5)
+
+            sx = np.cos(q7)*np.sin(q5)+np.cos(q5)*np.cos(q6)*np.sin(q7)
+            sy = np.sin(q6)*np.sin(q7)
+            sz = np.cos(q5)*np.cos(q7)-np.cos(q6)*np.sin(q5)*np.sin(q7)
+
+            ax = np.cos(q5)*np.sin(q6)
+            ay = -np.cos(q6)
+            az = -np.sin(q5)*np.sin(q6)
+            """
+
+            eq1 = -q6 + math.atan2(-math.sqrt(ax**2+ay**2),az)
+            eq2 = -q5 + math.atan2(-ay,-ax)
+            eq3 = -q7 + math.atan2(-sz,nz)
+
+            return [eq1,eq2,eq3]
+
+        #solve the system closer to
+        q567i = current_joints[-3:]
+        theta_5_p,theta_6_p,theta_7_p = fsolve(sys_eq_sph_w_p,q567i)
+        theta_5_n,theta_6_n,theta_7_n = fsolve(sys_eq_sph_w_n,q567i)
+
+
+
+
+        #chosse theta 5 , 6 & 7
+
+        diffp = abs(theta_5_p-actual_joints_com[4]) + abs(theta_6_p-actual_joints_com[5]) +abs(theta_7_p-actual_joints_com[6])
+        diffn = abs(theta_5_n-actual_joints_com[4]) + abs(theta_6_n-actual_joints_com[5]) +abs(theta_7_n-actual_joints_com[6])
+
+        if(diffp <= diffn):
+            theta_result_ret [4] = theta_5_p
+            theta_result_ret [5] = theta_6_p
+            theta_result_ret [6] = theta_7_p
+        else:
+            theta_result_ret [4] = theta_5_n
+            theta_result_ret [5] = theta_6_n
+            theta_result_ret [6] = theta_7_n
+
+
+
+        return theta_result_ret
+
+
+    def getRotationalFromEuler(self,euler_angles):
+
+        r,p,y = euler_angles
+
+        Rotational = np.array([\
+            [np.cos(y)*np.cos(p),       np.cos(y)*np.sin(p)*np.sin(r) - np.sin(y)*np.cos(r),        np.cos(y)*np.sin(p)*np.cos(r) + np.sin(y)*np.sin(r)],\
+            [np.sin(y)*np.cos(p),       np.sin(y)*np.sin(p)*np.sin(r) + np.cos(y)*np.cos(r),        np.sin(y)*np.sin(p)*np.cos(r) - np.cos(y)*np.sin(r)],\
+            [-np.sin(p)         ,       np.cos(p)*np.sin(r)                                ,        np.cos(p)*np.cos(r)],\
+            ])
+
+        return Rotational
+
+    def getHomogeniusFromRotTran(self,Rot,Tran):
+        Tran = np.array(Tran)
+        Tran = Tran.reshape([3,1])
+        Rot = np.array(Rot)
+
+        Hom = np.hstack((Rot,Tran))
+
+        scale_factor = np.array([0,0,0,1])
+        Hom = np.vstack((Hom,scale_factor))
+
+        return Hom
+
+    def getHomogeniusFromEulTran(self,Euler,Tran):
+        Rot = self.getRotationalFromEuler(Euler)
+        Hom = self.getHomogeniusFromRotTran(Rot,Tran)
+
+        return Hom
 
     def move_cartesian(self, pose, max_iterations = 10**8 ,nullspace = None, desired_force_per_one_list = [1], desired_vel_per_one_list = [1] , wait = True, counter_max = 10**4, error_threshold = 10 ** -3):
 

@@ -373,10 +373,12 @@ if __name__ == '__main__':
 
 
 
+    """
     try:
         while True:
             robot.step_simulation()
     except KeyboardInterrupt:
         p.disconnect()
+    """
 
 # ------------------------------------------------------------------------------------------------------
