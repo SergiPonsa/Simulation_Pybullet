@@ -1776,7 +1776,13 @@ class Robot():
 
         if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
             print("Expected " + str(expected_values) \
-            + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values" )
+            + "and given " + str(len(value_list)/len(joints_names_2modify_list)) + "values"+ "modify urdf joints" )
+
+            print("element_to_modify_list",element_to_modify_list)
+
+            print("values",value_list)
+
+            time.sleep(10)
         else:
             #The main program once it's checked
 
@@ -1825,8 +1831,15 @@ class Robot():
             expected_values += element_to_modify_list.count(i) * dict_expected_values[i]
 
         if( (expected_values == 0) or ( (expected_values * len(joints_names_2modify_list)) != len(value_list) ) ):
+
             print("Expected " + str(expected_values* len(joints_names_2modify_list))  \
-            + " and given " + str(len(value_list)) + " values" )
+            + " and given " + str(len(value_list)) + " values" +"modify robot joints" )
+
+            print("element_to_modify_list",element_to_modify_list)
+
+            print("values",value_list)
+
+            time.sleep(10)
         else:
 
             # The second one and the following ones it's saved to the first external file, but first it's copied to a dummy
@@ -1895,7 +1908,14 @@ class Robot():
 
         if( (expected_values == 0) or ( expected_values != len(value_list) ) ):
             print("Expected " + str(expected_values)  \
-            + " and given " + str(len(value_list)) + " values" )
+            + " and given " + str(len(value_list)) + " values" + "modify base" )
+
+            print("element_to_modify_list",element_to_modify_list)
+
+            print("values",value_list)
+
+            time.sleep(10)
+
         else:
 
             joint_index = 0
