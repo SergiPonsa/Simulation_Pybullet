@@ -1,0 +1,131 @@
+<robot
+  name="Cartesian_control_URDF" version="1.0">
+
+  <!-- Robot  -->
+
+  <!-- Base link -->
+  <link
+    name="base_link2">
+    <inertial>
+      <mass value="0.0" />
+      <inertia ixx = "0" ixy = "0" ixz = "0"
+               iyx = "0" iyy = "0" iyz = "0"
+               izx = "0" izy = "0" izz = "0" />
+    </inertial>
+  </link>
+
+  <link name="z_control_link">
+    <inertial>
+      <mass value="0.01" />
+      <inertia ixx = "0" ixy = "0" ixz = "0"
+               iyx = "0" iyy = "0" iyz = "0"
+               izx = "0" izy = "0" izz = "0" />
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="cube.obj" scale="0.0015 0.0015 0.0015"/>
+      </geometry>
+      <material name="blockmat1">
+        <color rgba="0.2 0.8 0.1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="z_control_joint" type="prismatic">
+    <parent link="base_link2"/>
+    <child link="z_control_link"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+  </joint>
+
+  <link name="y_control_link">
+    <inertial>
+      <mass value="0.01" />
+      <inertia ixx = "0" ixy = "0" ixz = "0"
+               iyx = "0" iyy = "0" iyz = "0"
+               izx = "0" izy = "0" izz = "0" />
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="cube.obj" scale="0.0015 0.0015 0.0015"/>
+      </geometry>
+      <material name="blockmat2">
+        <color rgba="0.1 0.2 0.8 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="y_control_joint" type="prismatic">
+    <parent link="z_control_link"/>
+    <child link="y_control_link"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+  </joint>
+
+  <link name="x_control_link">
+    <inertial>
+      <mass value="0.01" />
+      <inertia ixx = "0" ixy = "0" ixz = "0"
+               iyx = "0" iyy = "0" iyz = "0"
+               izx = "0" izy = "0" izz = "0" />
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="cube.obj" scale="0.0015 0.0015 0.0015"/>
+      </geometry>
+      <material name="blockmat3">
+        <color rgba="0.8 0.2 0.1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="x_control_joint" type="prismatic">
+    <parent link="y_control_link"/>
+    <child link="x_control_link"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+  </joint>
+
+  <link name="orient_link">
+    <inertial>
+      <mass value="0.01" />
+      <inertia ixx = "0" ixy = "0" ixz = "0"
+               iyx = "0" iyy = "0" iyz = "0"
+               izx = "0" izy = "0" izz = "0" />
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="cube.obj" scale="0.0015 0.0015 0.0015"/>
+      </geometry>
+      <material name="blockmat4">
+        <color rgba="0.8 0.8 0.1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="orient_joint" type="fixed">
+    <parent link="x_control_link"/>
+    <child link="orient_link"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0615"/>
+  </joint>
+
+
+
+
+
+  <!--################################################
+  ########          connect model                #####
+  ####################################################-->
+
+  <!-- connect arm to world -->
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link2"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+  </joint>
+</robot>
