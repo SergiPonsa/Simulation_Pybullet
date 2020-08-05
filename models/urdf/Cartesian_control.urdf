@@ -36,7 +36,7 @@
     <parent link="base_link2"/>
     <child link="z_control_link"/>
     <axis xyz="0 0 1"/>
-    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+    <limit effort="100.0" lower="-3" upper="3" velocity="2"/>
   </joint>
 
   <link name="y_control_link">
@@ -61,7 +61,7 @@
     <parent link="z_control_link"/>
     <child link="y_control_link"/>
     <axis xyz="0 1 0"/>
-    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+    <limit effort="100.0" lower="-3" upper="3" velocity="2"/>
   </joint>
 
   <link name="x_control_link">
@@ -86,7 +86,7 @@
     <parent link="y_control_link"/>
     <child link="x_control_link"/>
     <axis xyz="1 0 0"/>
-    <limit effort="1000.0" lower="-3" upper="3" velocity="2"/>
+    <limit effort="100.0" lower="-3" upper="3" velocity="2"/>
   </joint>
 
   <link name="orient_link">

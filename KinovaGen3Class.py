@@ -39,7 +39,7 @@ class KinovaGen3(Robot):
     tool_orient_e = [-3.14,0,1.57],
 
     nullspace = False,
-    home_angles = [0, 0.392, 0.0, 1.962, 0.0, 0.78, 0.0],
+    home_angles = [0, 0.392, 0.0, 1.962, 0.0, 0.78, -1.57],
     visual_inspection = True,
 
     tcp_offset_pos = [0.0, 0.0, 0.0],
